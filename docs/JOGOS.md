@@ -30,3 +30,10 @@ Depende do **seu aparelho**, não do notebook. NES/SNES/GB/GBA rodam bem em quas
 ## Honestidade sobre os testes
 Testei no navegador: lista de jogos, abrir o jogo de teste (o emulador do NES iniciou e desenhou a tela), salvar/ler save no servidor e bloqueio de acesso a arquivos fora da pasta. **Não testei jogos reais** (não tenho jogos), controle físico, celular, TV box, nem PS1/N64.
 
+
+## Jogos em .rar (comum no PlayStation)
+
+Muitos jogos de PlayStation vêm em .rar com uma pasta de .bin + .cue, formato que o emulador não abre direto. Ao abrir a aba Jogos, o servidor **converte sozinho** cada .rar em um .zip com só o jogo (o .rar original vai para Jogos/Originais_rar, que você pode apagar para liberar espaço). A conversão usa o 7-Zip e pode levar alguns minutos; um aviso aparece na aba enquanto isso.
+
+- **Arquivo com senha:** se o .rar for protegido, a aba mostra um aviso com um campo para digitar a senha (geralmente está no site de onde você baixou). A senha só é usada para descompactar e **não fica guardada**.
+- **Pasta com várias versões** (por exemplo original e dublado): o servidor usa a primeira que achar.
