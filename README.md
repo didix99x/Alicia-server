@@ -2,31 +2,139 @@
   <img src="docs/img/banner.svg" alt="Alicia Server" width="100%">
 </p>
 
+<h3 align="center">🏠 O servidor doméstico com uma assistente de IA dentro.<br>Filmes, jogos, música, arquivos e RPG num painel só, rodando num notebook velho.</h3>
+
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-painel-009688?logo=fastapi&logoColor=white">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-10%2F11-0078D6?logo=windows&logoColor=white">
-  <img alt="Android" src="https://img.shields.io/badge/Android-WebView%20(APK)-3DDC84?logo=android&logoColor=white">
+  <img alt="Android" src="https://img.shields.io/badge/Android-APK-3DDC84?logo=android&logoColor=white">
   <img alt="Jellyfin" src="https://img.shields.io/badge/Jellyfin-filmes%20e%20s%C3%A9ries-00A4DC?logo=jellyfin&logoColor=white">
   <img alt="Tailscale" src="https://img.shields.io/badge/Tailscale-rede%20privada-242424?logo=tailscale&logoColor=white">
-  <img alt="Sem nuvem paga" src="https://img.shields.io/badge/custo-s%C3%B3%20a%20API%20da%20NVIDIA-7c5cf0">
+  <img alt="NVIDIA" src="https://img.shields.io/badge/IA-NVIDIA%20NIM-76B900?logo=nvidia&logoColor=white">
+  <img alt="Feito com Claude Code" src="https://img.shields.io/badge/feito%20com-Claude%20Code-7c5cf0">
+  <img alt="Vibe coded" src="https://img.shields.io/badge/vibe-coded-ff4fa3">
 </p>
 
-# Alicia Server
+<p align="center">
+  <a href="#-o-que-%C3%A9">O que é</a> ·
+  <a href="#-funcionalidades-uma-por-uma">Funcionalidades</a> ·
+  <a href="#-como-%C3%A9">Capturas</a> ·
+  <a href="#%EF%B8%8F-arquitetura">Arquitetura</a> ·
+  <a href="#-come%C3%A7ando">Começando</a> ·
+  <a href="#-documenta%C3%A7%C3%A3o">Documentação</a> ·
+  <a href="#-cr%C3%A9ditos">Créditos</a>
+</p>
 
-Um **servidor doméstico que fica ligado 24 horas** num notebook modesto (Core i5 de 3ª geração, 8 GB de RAM, HD mecânico) e reúne **num painel só**:
+---
 
-- 💬 **Alicia**, uma assistente de IA com personalidade, voz feminina e memória (o cérebro é o [Hermes Agent](https://github.com/NousResearch/hermes-agent) usando a API da NVIDIA);
-- 📁 **Arquivos** acessíveis de qualquer aparelho, com backup automático;
-- 🎬 **Filmes e séries** (Jellyfin) dentro do painel;
-- 🎮 **Jogos retrô** (Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation) **rodando no navegador**, sem instalar nada;
-- 🎵 **Música** no estilo Jellyfin/Spotify, com aba **Descobrir** (estilos, humores, recomendações da Alicia, importar playlist do YouTube), que a Alicia toca quando você pede e que fica guardada no servidor por artista e gênero;
-- 🎲 **RPG de mesa** com a Alicia como mestra (até 5 jogadores);
-- 🖥️ **Monitor de acessos** ao vivo, painel de saúde do servidor e **app Android** para celular e TV box.
+## ✨ O que é
 
-Tudo é acessado de **qualquer lugar por uma rede privada** (Tailscale): nenhuma porta é aberta na internet.
+O **Alicia Server** transforma um **notebook modesto** (Core i5 de 3ª geração, 8 GB de RAM, HD mecânico) num **servidor que fica ligado 24 horas** e que a família inteira usa pelo **celular, TV box, tablet ou PC**, em casa ou na rua.
 
-> 🇧🇷 Todo o projeto, a interface e a documentação estão em português do Brasil.
+Você abre **um endereço**, escolhe o que quer e pronto:
+
+> 💬 *"Alicia, toca uma música pra treinar."* → ela abre o player e toca no seu aparelho.
+> 🎮 Escolhe um jogo de Super Nintendo e joga direto no navegador, **sem instalar nada e sem fazer login**.
+> 🎬 Abre o Jellyfin em tela cheia, já logado, e assiste ao filme.
+> 🎲 Chama os amigos para uma mesa de RPG com a Alicia como mestra.
+
+| 🖥️ Roda em hardware humilde | 🔒 Nada exposto na internet | 💸 Custo | 🇧🇷 Idioma |
+|---|---|---|---|
+| Tarefas pesadas (emulação, vídeo) rodam **no seu aparelho**, não no servidor | Acesso de fora de casa só pela rede privada **Tailscale** | Só a API da NVIDIA (com cota gratuita) | Tudo em **português do Brasil** |
+
+---
+
+## 🧭 Funcionalidades, uma por uma
+
+> Cada item abaixo tem um guia completo com o passo a passo de uso em **[docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md)**.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 💬 Alicia, a assistente
+Conversa com **personalidade própria**, vários **jeitos de falar** e um **modo sem filtro**. Tem **voz feminina** (Francisca, neural) e **lembra de conversas anteriores**. Ela **toca música quando você pede**, controla o player (pausa, próxima, volume) e **analisa o próprio servidor com números reais**: memória, disco, backup, acessos e alertas.
+
+</td>
+<td width="50%" valign="top">
+
+### 🎵 Música estilo Spotify/Jellyfin
+Busca em biblioteca e YouTube, **toca no aparelho que você está usando** (não no notebook), **rádio do mesmo gênero** quando a música acaba, fila, curtidas, playlists e um player que **fica por cima de tudo**, até com jogo aberto. O servidor **guarda cada música por artista e gênero**.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🔎 Descobrir (repertório)
+**20 estilos** e **12 humores** (Treinar, Estudar, Relaxar, Dormir, Festa…), cada um com um **mix de 14 faixas escolhido pela Alicia**. Ela também **recomenda pelo seu gosto**, você **importa uma playlist do YouTube** e manda **guardar tudo no servidor** em segundo plano.
+
+</td>
+<td valign="top">
+
+### 🎮 Jogos retrô no navegador
+**Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation.** Biblioteca em blocos como num console, **console detectado pelo conteúdo do arquivo**, progresso **salvo no servidor** e a música continua tocando enquanto você joga.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🎬 Filmes e séries
+**Jellyfin** dentro do painel, **em tela cheia e já logado** (sem pedir senha). Envie filmes e séries pelo próprio painel; ele reconhece capas e episódios sozinho.
+
+</td>
+<td valign="top">
+
+### 📁 Arquivos e backup
+Pasta compartilhada acessível de qualquer aparelho: **envio, prévia, download, lixeira** (apagar nunca é definitivo) e **backup diário automático**.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🎲 RPG de mesa com mestra IA
+Mesas com **código de convite**, **até 5 jogadores**, **dados justos rolados pelo servidor**, combate, personagens prontos e **campanhas originais**. A Alicia narra e conduz a história.
+
+</td>
+<td valign="top">
+
+### 🖥️ Monitor e saúde do servidor
+**Quem acessou o quê, ao vivo**, num terminal e no painel, **sem senhas nem conteúdo de conversa**. Gráficos de CPU, memória e disco, estado de cada serviço e **alertas** (disco cheio, HD com problema, tentativas de invasão).
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 👤 Perfil visitante
+Um botão e a pessoa já entra, **sem senha**, só em Jogos, Música, Filmes e RPG. O bloqueio é feito **no servidor** (não é só botão escondido) e o administrador pode desligar a qualquer hora.
+
+</td>
+<td valign="top">
+
+### 📱 App Android e modo TV
+**APK leve** que abre o painel no celular e na TV box, com navegação por controle remoto e microfone para a Alicia. O painel tem **modo TV**, **abas embaixo no celular** e **se adapta de telas pequenas a monitores ultrawide**.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🔐 Acesso de qualquer lugar
+**Tailscale** + SSH: use o servidor fora de casa **sem abrir nenhuma porta** no roteador. Firewall liberado só para a rede de casa e a rede privada.
+
+</td>
+<td valign="top">
+
+### 🧰 Instalação e manutenção
+Scripts que instalam tudo, criam **tarefas agendadas** (painel, Hermes, monitor, backup sobem sozinhos), um botão **Verificar tudo** que testa 11 itens e uma **tela de configurações** onde você cola a chave da IA.
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -49,6 +157,10 @@ Tudo é acessado de **qualquer lugar por uma rede privada** (Tailscale): nenhuma
     <td><img src="docs/img/10-rpg.png" alt="RPG"><br><sub><b>RPG</b>: personagens prontos e campanhas originais, com a Alicia mestra.</sub></td>
     <td><img src="docs/img/12-registros.png" alt="Registros"><br><sub><b>Registros</b>: quem acessou o quê, ao vivo, sem senhas nem conteúdo.</sub></td>
   </tr>
+  <tr>
+    <td><img src="docs/img/09-arquivos.png" alt="Arquivos"><br><sub><b>Arquivos</b>: pastas compartilhadas, prévia, lixeira e backup.</sub></td>
+    <td><img src="docs/img/13-modo-tv.png" alt="Modo TV"><br><sub><b>Modo TV</b>: blocos grandes, feito para controle remoto.</sub></td>
+  </tr>
 </table>
 
 <p align="center">
@@ -58,6 +170,19 @@ Tudo é acessado de **qualquer lugar por uma rede privada** (Tailscale): nenhuma
   <img src="docs/img/17-visitante.png" alt="Visitante" width="23%">
 </p>
 <p align="center"><sub>Celular (abas embaixo) e entrada como visitante. As imagens usam <b>dados de exemplo</b> (<code>scripts/demo</code>): nenhuma música, jogo, usuário ou endereço real aparece aqui.</sub></p>
+
+---
+
+## 🗣️ Exemplos de uso com a Alicia
+
+| Você diz | O que acontece |
+|---|---|
+| *"toca música pra treinar"* | Monta um mix de treino e começa a tocar no seu aparelho |
+| *"coloca um sertanejo"* | Toca o que há na biblioteca e completa com um mix do estilo |
+| *"me recomenda umas músicas"* | Escolhe pelo que você curtiu e ouve mais |
+| *"pausa" / "próxima" / "volume mais baixo"* | Controla o player |
+| *"como está o servidor?"* | Responde com memória, disco, backup, acessos e alertas **reais** |
+| *"vamos jogar RPG?"* | Abre a mesa e narra a aventura |
 
 ---
 
@@ -71,16 +196,16 @@ Tudo é acessado de **qualquer lugar por uma rede privada** (Tailscale): nenhuma
 | **Arquivos** | Pasta compartilhada, envio/prévia/download, lixeira, backup diário | Painel + pasta de rede + `robocopy` agendado |
 | **Filmes e Séries** | Biblioteca de vídeo para todos os aparelhos | Jellyfin embutido no painel, login automático do usuário "casa" |
 | **Jogos** | 6 consoles no navegador, saves no servidor | EmulatorJS hospedado no próprio servidor |
-| **Música** | Busca, biblioteca por artista/gênero, rádio do mesmo gênero | yt-dlp + biblioteca em disco + índice JSON + gênero pela Alicia |
+| **Música** | Busca, biblioteca por artista/gênero, rádio, Descobrir | yt-dlp + biblioteca em disco + índice JSON + gênero pela Alicia |
 | **RPG** | Mesas com código, dados justos, combate, mestra IA | Regras inspiradas no SRD 5.2 (CC-BY-4.0), dados pelo servidor |
 | **Monitor de acessos** | Tudo que passa pelo servidor, ao vivo, num terminal e no painel | Log JSON com rotação + `monitor.py` |
-| **Visitante** | Entrada sem senha só para jogos, música, filmes e RPG | Bloqueio no servidor (não só botão escondido) |
+| **Visitante** | Entrada sem senha só para jogos, música, filmes e RPG | Bloqueio no servidor |
 | **Rede privada** | Acesso de fora de casa sem abrir portas | Tailscale + OpenSSH + firewall restrito |
 | **App Android** | Painel no celular e na TV box | WebView em Java com endereço configurável |
 
-➡️ Detalhes de cada um: **[docs/SISTEMAS.md](docs/SISTEMAS.md)**
+➡️ Detalhes técnicos: **[docs/SISTEMAS.md](docs/SISTEMAS.md)** · guia de uso: **[docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md)**
 
-## 🗺️ Arquitetura em uma imagem
+## 🏗️ Arquitetura
 
 ```mermaid
 flowchart LR
@@ -110,7 +235,7 @@ flowchart LR
 
 ## 📱 O app Android (APK)
 
-É um **aplicativo leve que abre o painel** no celular e na TV box: uma `WebView` em tela cheia, com uma tela para você digitar o endereço do servidor (sem precisar gerar outro APK), navegação pelo controle remoto, microfone para a voz da Alicia (com o pedido de permissão do Android) e ícone próprio. Ele **não guarda dados nem roda nada pesado**: tudo continua no servidor. O projeto está em [`alicia-apk/`](alicia-apk) e a função completa, a escolha técnica e como compilar estão em **[docs/APK.md](docs/APK.md)**.
+Um **aplicativo leve que abre o painel** no celular e na TV box: `WebView` em tela cheia, tela para digitar o endereço do servidor (sem gerar outro APK), navegação pelo controle remoto, microfone para a voz da Alicia (com pedido de permissão) e ícone próprio. Ele **não guarda dados nem roda nada pesado**: tudo continua no servidor. Projeto em [`alicia-apk/`](alicia-apk); função, escolha técnica e compilação em **[docs/APK.md](docs/APK.md)**.
 
 ## 🚀 Começando
 
@@ -127,8 +252,9 @@ Login com senha em hash (Argon2) e bloqueio por tentativas · portas liberadas *
 
 | Documento | Para quê |
 |---|---|
+| [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md) | **Cada funcionalidade explicada**: o que é, como usar e limites |
 | [docs/INSTALACAO.md](docs/INSTALACAO.md) | Passo a passo completo, do zero ao servidor no ar |
-| [docs/SISTEMAS.md](docs/SISTEMAS.md) | Cada sistema em detalhe: o que faz, como funciona, limites |
+| [docs/SISTEMAS.md](docs/SISTEMAS.md) | Cada sistema em detalhe técnico |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Componentes, portas, pastas, fluxos e lista da API |
 | [docs/APK.md](docs/APK.md) | O app Android: função, escolha técnica e uso |
 | [docs/SEGURANCA.md](docs/SEGURANCA.md) | Modelo de segurança e privacidade |
@@ -158,16 +284,30 @@ Alicia-server/
 └─ docs/                 Documentação e imagens
 ```
 
+## 🛣️ O que ainda não existe
+
+Está tudo listado com honestidade em **[docs/ESTADO.md](docs/ESTADO.md)**. Os principais itens: modos *call* e *gamer* da Alicia no painel, APK ainda não compilado, migração da memória do app desktop antigo e backup em outro disco.
+
 ## ⚠️ Avisos importantes
 
 - **Sem jogos, BIOS, filmes nem músicas no repositório.** Você coloca os seus. Nada protegido por direitos autorais é distribuído aqui.
 - A **música** é obtida pelo servidor com o `yt-dlp`, o que contraria os termos de uso do YouTube e pode ferir direitos autorais. É uma escolha do dono do servidor, para uso pessoal; leia [docs/DECISOES.md](docs/DECISOES.md).
-- O único serviço externo pago/com cota é a **API da NVIDIA**; o consumo é controlado e a chave nunca fica no código.
+- O único serviço externo com cota é a **API da NVIDIA**; o consumo é controlado e a chave nunca fica no código.
 
 ## 🙏 Créditos
 
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Research) · [Jellyfin](https://jellyfin.org) · [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) · [Tailscale](https://tailscale.com) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [edge-tts](https://github.com/rany2/edge-tts) · SRD 5.2 (Wizards of the Coast, CC-BY-4.0). Lista completa em [docs/CREDITOS.md](docs/CREDITOS.md).
+### 👨‍💻 Autor
+
+**Anderson** ([didix99x](https://github.com/didix99x)), **vibe coder**: idealizou o projeto, definiu cada funcionalidade, testou no servidor real e dirigiu o desenvolvimento do começo ao fim, conversando com a IA em vez de escrever o código linha a linha.
+
+### 🤖 Como foi feito
+
+Construído em **vibe coding** com o **[Claude Code](https://claude.com/claude-code)** (Anthropic): Anderson pedia, testava no notebook e pedia o ajuste seguinte; a IA escrevia, rodava e documentava. A **Alicia**, a personalidade e os prompts são criação original do Anderson.
+
+### 🧱 Software livre e serviços usados
+
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Research) · [Jellyfin](https://jellyfin.org) · [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) · [Tailscale](https://tailscale.com) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [edge-tts](https://github.com/rany2/edge-tts) · [FastAPI](https://fastapi.tiangolo.com) · [NVIDIA NIM](https://build.nvidia.com) · SRD 5.2 (Wizards of the Coast, CC-BY-4.0). Lista completa em [docs/CREDITOS.md](docs/CREDITOS.md).
 
 ---
 
-<p align="center"><sub>Feito com carinho para rodar em hardware humilde. 🖤</sub></p>
+<p align="center"><sub>Feito com carinho, café e vibe coding para rodar em hardware humilde. 🖤<br>Se gostou, deixa uma ⭐ no repositório!</sub></p>

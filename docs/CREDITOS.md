@@ -1,4 +1,6 @@
 ﻿# Créditos e licenças
+- **Autor e direção do projeto:** **Anderson** ([didix99x](https://github.com/didix99x)), **vibe coder**. Idealizou o sistema, a Alicia (personalidade e prompts originais), pediu e testou cada funcionalidade no servidor real.
+- **Desenvolvimento assistido por IA:** código e documentação escritos em vibe coding com o [Claude Code](https://claude.com/claude-code) (Anthropic), sob a direção do Anderson.
 - **Regras do RPG**: inspiradas no *System Reference Document 5.2* (conteúdo aberto), publicado sob licença **Creative Commons CC-BY-4.0**. Atribuição: "Este trabalho inclui material do System Reference Document 5.2 ("SRD 5.2") da Wizards of the Coast LLC, disponível em https://www.dndbeyond.com/srd, licenciado sob CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)." As regras aqui são simplificadas; nenhum nome de marca é usado no jogo.
 - **Campanhas**: "A Cripta do Sino Quebrado" e "O Mercado das Sombras" são **originais**, escritas para este projeto (sem aventuras oficiais ou de terceiros).
 - **Personagens**: nomes e histórias originais; classes/espécies do SRD 5.2.
