@@ -147,6 +147,16 @@ Guia do usuário: [JOGOS.md](JOGOS.md).
 
 ---
 
+### Descobrir (repertório)
+
+A aba **Descobrir** da Música não depende só do que você já ouviu:
+
+- **20 estilos** (Pop, Rock, Rap, Funk, Sertanejo, MPB, Pagode, Forró, Eletrônica, Lo-fi, Jazz, Clássica, Metal, Reggae, Games, Anime, Anos 80/90, Gospel, Infantil) e **12 humores/atividades** (Treinar, Estudar, Relaxar, Dormir, Festa, Trabalhar, Dirigir, Romântico, Acordar, Triste, Jogar, Cozinhar).
+- Cada um vira um **mix de 14 músicas escolhidas pela Alicia** (a IA monta a lista, o servidor acha cada faixa no YouTube, descartando shows ao vivo e compilações longas). O mix fica em cache por 24 horas.
+- **A Alicia recomenda**: monta uma seleção pelo seu gosto (curtidas e mais ouvidas) ou surpreende você.
+- **Importar playlist do YouTube**: cole o link e as músicas aparecem para tocar ou salvar como playlist.
+- **Guardar no servidor**: baixa em segundo plano (fila, uma por vez) para tocar na hora depois; um indicador mostra o andamento.
+- No chat: "toca música pra treinar", "coloca um sertanejo", "me recomenda umas músicas". Se a biblioteca tem poucas faixas do estilo, a Alicia completa com o mix.
 ## 9. RPG com a Alicia como mestra
 
 - **Regras** inspiradas no **SRD 5.2** (conteúdo aberto, licença **CC-BY-4.0**; atribuição em [CREDITOS.md](CREDITOS.md)), simplificadas para serem rápidas e divertidas. O nome "Dungeons & Dragons" não é usado.

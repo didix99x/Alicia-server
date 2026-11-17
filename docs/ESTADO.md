@@ -12,6 +12,7 @@ Este documento separa com honestidade **o que foi verificado**, **o que foi só 
 | Alicia | Conversa real com o modelo da NVIDIA (resposta, expressão, personalidade, memória de sessão); voz Francisca gerada pelo servidor |
 | Alicia analisa o servidor | Pergunta de análise respondida com números reais (memória, disco, HD, backup, acessos e alertas) |
 | Música | Busca (biblioteca + YouTube), download e organização por gênero/artista, reprodução com avanço, rádio do mesmo gênero, fila, curtidas, botão de fechar, pedidos pela Alicia (música, pausa, próxima, volume) |
+| Descobrir (música) | Catálogo de estilos e humores, mixes curados pela IA (14 faixas, 15–25 s na primeira vez), recomendações, importação de playlist, fila de download, pedidos de estilo pelo chat da Alicia; interface conferida no navegador |
 | Jogos | Biblioteca em blocos, organização automática por conteúdo do arquivo, emulador abrindo um jogo de teste e um de Super Nintendo, salvar/ler progresso no servidor, camada sobre o painel com a música continuando |
 | Filmes | Jellyfin dentro do painel em tela cheia, login automático do usuário "casa", envio de filme e série com reconhecimento pelo Jellyfin |
 | RPG | Sessão completa com 2 jogadores simulados, incluindo combate e final (narração com o modelo falso nesse teste) |

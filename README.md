@@ -20,7 +20,7 @@ Um **servidor doméstico que fica ligado 24 horas** num notebook modesto (Core i
 - 📁 **Arquivos** acessíveis de qualquer aparelho, com backup automático;
 - 🎬 **Filmes e séries** (Jellyfin) dentro do painel;
 - 🎮 **Jogos retrô** (Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation) **rodando no navegador**, sem instalar nada;
-- 🎵 **Música** no estilo Jellyfin/Spotify, que a Alicia toca quando você pede e que fica guardada no servidor por artista e gênero;
+- 🎵 **Música** no estilo Jellyfin/Spotify, com aba **Descobrir** (estilos, humores, recomendações da Alicia, importar playlist do YouTube), que a Alicia toca quando você pede e que fica guardada no servidor por artista e gênero;
 - 🎲 **RPG de mesa** com a Alicia como mestra (até 5 jogadores);
 - 🖥️ **Monitor de acessos** ao vivo, painel de saúde do servidor e **app Android** para celular e TV box.
 

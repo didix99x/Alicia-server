@@ -973,6 +973,7 @@ def extrair_consulta(texto: str):
         return None                                                  # "você consegue ouvir?" não é pedido de música
     return consulta
 
+_RECOMENDA = re.compile(r"\b(recomend\w*|sugir\w*|sugest\w*|suger\w*|surpreend\w*|me indica\w*|indique|indica uma|descobr\w*)\b")
 _NEGA = re.compile(r"nao (?:tenho|consigo|posso|sei|faco)[^.!?]{0,50}(?:tocar|musica|funcao|som)|nao tenho essa|nao consigo (?:colocar|reproduzir)|sem essa funcao")
 _RUINS = re.compile(r"\b(horas?|hours?|full album|album completo|mix|playlist|compilation|coletanea|as melhores|best of|greatest hits)\b", re.I)
 
@@ -988,6 +989,8 @@ def achar_musica(consulta: str):
             return [mk(v, i) for v, i in todas[:20]], "biblioteca"
         consulta = "musicas populares brasil"
     tokens = [t for t in _norm(consulta).split() if t not in _PARADAS]
+    mixq = _achar_mix(consulta)                               # estilo ou humor conhecido ("pra treinar", "sertanejo", "relaxar")?
+    base = []
     if tokens and todas:
         pontos = []
         for v, i in todas:
@@ -996,15 +999,269 @@ def achar_musica(consulta: str):
                 pontos.append((2 if all(t in _norm(i["artista"]) for t in tokens) else 1, v, i))
         if pontos:
             artista = [x for x in pontos if x[0] == 2]
-            if artista:                                       # pediu um artista: toca as músicas dele, embaralhadas
-                lista = [mk(v, i) for _, v, i in artista]
-                random.shuffle(lista)
-                return lista[:25], "biblioteca"
-            return [mk(v, i) for _, v, i in pontos[:5]], "biblioteca"
+            escolhidas = artista or pontos
+            base = [mk(v, i) for _, v, i in escolhidas]
+            if not mixq or len(base) >= 5:                    # achou bastante coisa na biblioteca (ou não é um estilo): toca daí
+                random.shuffle(base)
+                return base[:25] if artista else base[:5], "biblioteca"
+    if mixq:                                                  # biblioteca pequena nesse estilo/humor: o mix da Alicia completa
+        extra = [t for t in _mix_curado(mixq[0], mixq[1], ler_env()) if t["id"] not in {b["id"] for b in base}]
+        random.shuffle(extra)
+        lista = base + extra[:14]
+        if lista:
+            return lista, "mix"
     achados = _buscar_youtube(consulta)
     bons = [t for t in achados if not _RUINS.search(t["titulo"]) or _RUINS.search(consulta)]
     return (bons or achados)[:1], "youtube"
 
+# ----- Descobrir: estilos, humores, playlists do YouTube, recomendações e "guardar no servidor" em segundo plano -----
+ESTILOS = [("Pop", "🎤", "pop hits internacional"), ("Rock", "🎸", "rock clássico melhores músicas"), ("Rap e Hip-hop", "🎧", "rap hip hop melhores músicas"),
+           ("Funk", "🔊", "funk brasileiro sucessos"), ("Sertanejo", "🤠", "sertanejo sucessos"), ("MPB", "🇧🇷", "mpb clássicos"),
+           ("Pagode e Samba", "🥁", "pagode samba sucessos"), ("Forró", "🪗", "forró pé de serra sucessos"), ("Eletrônica", "🎛️", "música eletrônica dance hits"),
+           ("Lo-fi", "☕", "lofi beats relaxantes"), ("Jazz", "🎷", "jazz clássicos"), ("Clássica", "🎻", "música clássica melhores"),
+           ("Metal", "🤘", "heavy metal clássicos"), ("Reggae", "🌴", "reggae clássicos"), ("Trilhas de games", "🎮", "trilha sonora jogos clássicos"),
+           ("Anime", "🌸", "anime openings melhores"), ("Anos 80", "📼", "hits anos 80"), ("Anos 90", "💿", "hits anos 90"),
+           ("Gospel", "🙏", "gospel louvor sucessos"), ("Infantil", "🧸", "músicas infantis")]
+HUMORES = [("Treinar", "💪", "música para treinar academia energia"), ("Estudar", "📚", "música para estudar concentração"), ("Relaxar", "🧘", "música relaxante calma"),
+           ("Dormir", "😴", "música para dormir suave"), ("Festa", "🎉", "músicas de festa animadas"), ("Trabalhar", "💻", "música para trabalhar foco"),
+           ("Dirigir", "🚗", "música para viajar estrada"), ("Romântico", "💕", "músicas românticas"), ("Acordar", "🌅", "músicas para acordar animado"),
+           ("Triste", "🌧️", "músicas tristes sofrência"), ("Jogar", "🕹️", "música para jogar gamer"), ("Cozinhar", "🍳", "música para cozinhar alegre")]
+_slug = lambda s: re.sub(r"[^a-z0-9]+", "-", _norm(s)).strip("-")
+_MIX = {_slug(n): (n, q) for n, _, q in ESTILOS + HUMORES}
+_SINON = {"treino": "treinar", "academia": "treinar", "malhar": "treinar", "correr": "treinar", "estudo": "estudar", "concentrar": "estudar", "relax": "relaxar",
+          "relaxante": "relaxar", "calma": "relaxar", "sono": "dormir", "balada": "festa", "trabalho": "trabalhar", "foco": "trabalhar", "viagem": "dirigir",
+          "estrada": "dirigir", "romantica": "romantico", "romanticas": "romantico", "amor": "romantico", "games": "trilhas-de-games", "game": "trilhas-de-games",
+          "gamer": "jogar", "hiphop": "rap-e-hip-hop", "rap": "rap-e-hip-hop", "samba": "pagode-e-samba", "pagode": "pagode-e-samba", "lofi": "lo-fi",
+          "classica": "classica", "eletronica": "eletronica", "oitentas": "anos-80", "noventas": "anos-90", "sofrencia": "triste", "tristes": "triste"}
+_cache_curtas = {}
+
+
+def _achar_mix(consulta: str):
+    """(nome, consulta de busca) se o pedido é um estilo ou humor conhecido; senão None."""
+    toks = [t for t in _norm(consulta).split() if t not in _PARADAS]
+    if not toks or len(toks) > 3:
+        return None
+    for chave in (_slug(" ".join(toks)), *[_SINON.get(t, t) for t in toks]):
+        if chave in _MIX:
+            return _MIX[chave]
+    return None
+
+
+def _buscar_curtas(consulta: str, n: int = 20):
+    """Busca no YouTube só metadados, descartando transmissões ao vivo e vídeos longos (coletâneas de horas)."""
+    ch = (consulta, n)
+    if ch in _cache_curtas and _cache_curtas[ch][0] > time.time():
+        return list(_cache_curtas[ch][1])
+    import yt_dlp
+    with yt_dlp.YoutubeDL({"quiet": True, "extract_flat": True, "skip_download": True, "noplaylist": True}) as y:
+        r = y.extract_info(f"ytsearch{n + (12 if n >= 10 else 4)}:{consulta}", download=False)
+    todos = []
+    for e in r.get("entries", []):
+        if not e or not e.get("id") or len(e["id"]) != 11 or e.get("live_status") in ("is_live", "is_upcoming"):
+            continue
+        todos.append({"id": e["id"], "titulo": (e.get("title") or "")[:140], "canal": (e.get("channel") or e.get("uploader") or "")[:80],
+                      "capa": f"https://i.ytimg.com/vi/{e['id']}/mqdefault.jpg", "duracao": int(e.get("duration") or 0)})
+    out = [t for t in todos if 0 < t["duracao"] <= 900]                 # músicas de verdade: até 15 min
+    if len(out) < min(n, 8):                                            # poucas? aceita também faixas até 45 min (coletâneas curtas)
+        out += [t for t in todos if 900 < t["duracao"] <= 2700 and t not in out]
+    out = out[:n]
+    _cache_curtas[ch] = (time.time() + 6 * 3600, out)
+    if len(_cache_curtas) > 120:
+        _cache_curtas.pop(next(iter(_cache_curtas)))
+    return list(out)
+
+
+def _playlist_youtube(url: str, limite: int = 100):
+    import yt_dlp
+    with yt_dlp.YoutubeDL({"quiet": True, "extract_flat": "in_playlist", "skip_download": True, "playlistend": limite}) as y:
+        r = y.extract_info(url, download=False)
+    out = []
+    for e in (r.get("entries") or []):
+        if e and e.get("id") and len(e["id"]) == 11:
+            out.append({"id": e["id"], "titulo": (e.get("title") or "")[:140], "canal": (e.get("channel") or e.get("uploader") or r.get("uploader") or "")[:80],
+                        "capa": f"https://i.ytimg.com/vi/{e['id']}/mqdefault.jpg", "duracao": int(e.get("duration") or 0)})
+    return (r.get("title") or "Playlist do YouTube")[:80], out
+
+
+def _perfil_gosto(u: str):
+    from collections import Counter
+    idx = _indice()
+    art = Counter(i["artista"] for i in idx.values())
+    gen = Counter(i["genero"] for i in idx.values() if i.get("genero") and i["genero"] != "Sem gênero")
+    curtidas = []
+    try:
+        d = json.loads(_arq_musica(u).read_text(encoding="utf-8-sig")) if _arq_musica(u).exists() else {}
+        curtidas = [f"{t.get('canal', '')} - {t.get('titulo', '')}" for t in d.get("curtidas", [])[:15]]
+    except Exception:
+        pass
+    return [a for a, _ in art.most_common(12)], [g for g, _ in gen.most_common(5)], curtidas
+
+
+def recomendar(u: str, pedido: str, env: dict):
+    """Uma seleção de ~10 músicas pelo gosto do usuário (a Alicia sugere, o servidor acha no YouTube). Sem chave: um mix aleatório."""
+    from concurrent.futures import ThreadPoolExecutor
+    artistas, generos, curtidas = _perfil_gosto(u)
+    sugestoes = []
+    if env.get("NVIDIA_API_KEY"):
+        gosto = (f"Artistas que ele mais ouve: {', '.join(artistas) or 'ainda nenhum'}. Gêneros: {', '.join(generos) or 'variados'}. "
+                 f"Músicas que curtiu: {'; '.join(curtidas) or 'nenhuma ainda'}. Pedido dele: {pedido or 'surpreenda-me, algo de que eu goste'}.")
+        ok, resp = alicia_ponte.perguntar_hermes(
+            env, "", "Você é uma curadora musical. Responda SOMENTE com JSON, sem texto antes ou depois: uma lista de 10 objetos "
+            '{"artista": "...", "musica": "..."} com músicas REAIS e conhecidas, em português ou internacionais conforme o gosto, '
+            "misturando algumas familiares com algumas descobertas. Não repita músicas que ele já tem.", gosto, 90)
+        if ok:
+            m = re.search(r"\[.*\]", resp, re.S)
+            try:
+                sugestoes = [s for s in json.loads(m.group(0)) if isinstance(s, dict) and s.get("musica")][:10] if m else []
+            except ValueError:
+                sugestoes = []
+    faixas = []
+    if sugestoes:
+        def um(s):
+            try:
+                r = _buscar_curtas(f"{s.get('artista', '')} {s['musica']}", 3)
+                return r[0] if r else None
+            except Exception:
+                return None
+        with ThreadPoolExecutor(5) as ex:
+            faixas = [t for t in ex.map(um, sugestoes) if t]
+    if len(faixas) < 5:                                       # sem chave ou sem resultado: mix aleatório de um estilo do gosto dele
+        nome = random.choice(generos) if generos else None
+        mix = _achar_mix(nome) if nome else None
+        faixas += _buscar_curtas((mix or random.choice(ESTILOS))[1] if mix else random.choice(ESTILOS)[2], 15)
+    vistos, unicas = set(), []
+    for t in faixas:
+        if t["id"] not in vistos:
+            vistos.add(t["id"]); unicas.append(t)
+    return unicas[:12]
+
+
+_cache_mix = {}
+
+
+def _mix_curado(nome: str, consulta: str, env: dict):
+    """Mix de ~14 músicas reais escolhidas pela Alicia para a categoria (cache de 24 h). Sem chave: busca simples."""
+    from concurrent.futures import ThreadPoolExecutor
+    if nome in _cache_mix and _cache_mix[nome][0] > time.time():
+        return list(_cache_mix[nome][1])
+    faixas = []
+    if env.get("NVIDIA_API_KEY"):
+        ok, resp = alicia_ponte.perguntar_hermes(
+            env, "", "Você é uma curadora musical. Responda SOMENTE com JSON, sem texto antes ou depois: uma lista de 14 objetos "
+            '{"artista": "...", "musica": "..."} com músicas REAIS e conhecidas para a categoria pedida, com artistas variados, '
+            "em português e internacionais. Prefira as versões originais.", f"Categoria: {nome} ({consulta}).", 90)
+        m = re.search(r"\[.*\]", resp, re.S) if ok else None
+        try:
+            sug = [s for s in json.loads(m.group(0)) if isinstance(s, dict) and s.get("musica")][:14] if m else []
+        except ValueError:
+            sug = []
+
+        def um(s):
+            try:
+                r = _buscar_curtas(f"{s.get('artista', '')} {s['musica']}", 3)
+                return r[0] if r else None
+            except Exception:
+                return None
+        if sug:
+            with ThreadPoolExecutor(5) as ex:
+                faixas = [t for t in ex.map(um, sug) if t]
+    if len(faixas) < 8:
+        faixas += _buscar_curtas(consulta, 20)
+    vistos, unicas = set(), []
+    for t in faixas:
+        if t["id"] not in vistos:
+            vistos.add(t["id"]); unicas.append(t)
+    _cache_mix[nome] = (time.time() + 24 * 3600, unicas[:16])
+    return list(unicas[:16])
+
+
+# fila para guardar músicas no servidor em segundo plano (uma por vez, devagar, para não pesar no notebook)
+import queue as _queue
+import threading as _threading
+_fila_dl = _queue.Queue()
+_dl = {"total": 0, "feitos": 0, "falhas": 0, "ativo": False}
+
+
+def _worker_dl():
+    while True:
+        vid = _fila_dl.get()
+        _dl["ativo"] = True
+        try:
+            _baixar_audio(vid)
+            _dl["feitos"] += 1
+        except Exception:
+            _dl["falhas"] += 1
+        if _fila_dl.empty():
+            _dl["ativo"] = False
+        time.sleep(1.0)
+
+
+_threading.Thread(target=_worker_dl, daemon=True).start()
+
+
+@app.get("/api/musica/descobrir")
+async def musica_descobrir(request: Request):
+    exigir_login(request)
+    return {"estilos": [{"id": _slug(n), "nome": n, "emoji": e} for n, e, _ in ESTILOS],
+            "humores": [{"id": _slug(n), "nome": n, "emoji": e} for n, e, _ in HUMORES]}
+
+
+@app.get("/api/musica/mix")
+async def musica_mix(request: Request, id: str):
+    exigir_login(request)
+    if id not in _MIX:
+        raise HTTPException(404, "Mix não encontrado.")
+    nome, consulta = _MIX[id]
+    try:
+        faixas = await asyncio.to_thread(_mix_curado, nome, consulta, ler_env())
+    except Exception:
+        raise HTTPException(502, "Não consegui montar esse mix agora. Tente de novo.")
+    return {"titulo": nome, "faixas": faixas}
+
+
+@app.get("/api/musica/playlist")
+async def musica_playlist(request: Request, url: str):
+    exigir_login(request)
+    if not re.search(r"list=[\w-]+", url) or "youtu" not in url:
+        raise HTTPException(400, "Cole o link de uma playlist do YouTube (precisa ter list=).")
+    try:
+        titulo, faixas = await asyncio.to_thread(_playlist_youtube, url)
+    except Exception:
+        raise HTTPException(502, "Não consegui ler essa playlist (ela pode ser privada).")
+    return {"titulo": titulo, "faixas": faixas}
+
+
+@app.post("/api/musica/recomendar")
+async def musica_recomendar(request: Request):
+    u = exigir_login(request)
+    c = await request.json()
+    try:
+        faixas = await asyncio.to_thread(recomendar, u, str(c.get("pedido", ""))[:200], ler_env())
+    except Exception:
+        raise HTTPException(502, "Não consegui montar a seleção agora. Tente de novo.")
+    registrar("MÚSICA", u, ip_de(request), "pediu recomendações de música", "ok" if faixas else "nada", "info")
+    return {"titulo": "Seleção da Alicia para você", "faixas": faixas}
+
+
+@app.post("/api/musica/guardar")
+async def musica_guardar(request: Request):
+    u = exigir_login(request)
+    ids = [i for i in (await request.json()).get("ids", []) if isinstance(i, str) and re.fullmatch(r"[\w-]{11}", i)][:200]
+    idx = _indice()
+    novos = [i for i in dict.fromkeys(ids) if not (i in idx and (DADOS / idx[i]["arquivo"]).exists())]
+    if not _dl["ativo"]:
+        _dl.update(total=0, feitos=0, falhas=0)
+    for i in novos:
+        _fila_dl.put(i)
+    _dl["total"] += len(novos)
+    registrar("MÚSICA", u, ip_de(request), f"mandou guardar {len(novos)} músicas no servidor", "ok", "info")
+    return {"enfileiradas": len(novos), "ja_guardadas": len(ids) - len(novos)}
+
+
+@app.get("/api/musica/guardando")
+async def musica_guardando(request: Request):
+    exigir_login(request)
+    return dict(_dl)
 
 @app.post("/api/alicia/musica")
 async def alicia_musica(request: Request):
@@ -1016,18 +1273,33 @@ async def alicia_musica(request: Request):
         t = c.get("faixa") or {}
         faixas, origem = [t], "comentario"
     else:
-        consulta = extrair_consulta(texto)
-        if consulta is None:
-            return {"nao_e_musica": True}
-        try:
-            faixas, origem = await asyncio.to_thread(achar_musica, consulta)
-        except Exception:
-            faixas, origem = [], "erro"
-        registrar("MÚSICA", u, ip_de(request), "a Alicia foi pedida para tocar música", "ok" if faixas else "nada", "info")
+        n_ = _norm(texto)
+        if _RECOMENDA.search(n_) and re.search(r"\b(musica|musicas|som|ouvir|escutar|banda|artista|cancao|tocar|playlist|algo novo|novidade)\b", n_):
+            try:                                                # "me recomenda músicas": a Alicia monta uma seleção pelo gosto dele
+                faixas, origem = await asyncio.to_thread(recomendar, u, texto, env), "recomenda"
+            except Exception:
+                faixas, origem = [], "erro"
+            registrar("MÚSICA", u, ip_de(request), "a Alicia foi pedida para recomendar músicas", "ok" if faixas else "nada", "info")
+            if not faixas:
+                return {"texto": "Não consegui montar uma seleção agora. Tente de novo em instantes.", "expressao": "pensando", "faixas": []}
+            consulta = ""
+        else:
+            consulta = extrair_consulta(texto)
+            if consulta is None:
+                return {"nao_e_musica": True}
+            try:
+                faixas, origem = await asyncio.to_thread(achar_musica, consulta)
+            except Exception:
+                faixas, origem = [], "erro"
+        if origem != "recomenda":
+            registrar("MÚSICA", u, ip_de(request), "a Alicia foi pedida para tocar música", "ok" if faixas else "nada", "info")
         if not faixas:
             return {"texto": "Não achei essa música. Quer tentar outro nome?", "expressao": "pensando", "faixas": []}
         t = faixas[0]
     padrao = f"Tocando {t['titulo']}" + (f", de {t['canal']}." if t.get("canal") and t["canal"].lower() not in t["titulo"].lower() else ".")
+    if not c.get("so_resposta") and len(faixas) > 1:
+        padrao = (f"Montei uma seleção de {len(faixas)} músicas pra você, começando por {t['titulo']}." if origem == "recomenda"
+                  else f"{padrao[:-1]} e mais {len(faixas) - 1} na fila.")
     resposta, expressao = padrao, "feliz"
     if c.get("so_achar"):                    # 1ª etapa: devolve já a música (rápido) para o painel começar a tocar
         return {"texto": padrao, "expressao": expressao, "faixas": faixas, "origem": origem}
@@ -1035,8 +1307,12 @@ async def alicia_musica(request: Request):
         sistema = alicia_ponte.montar_sistema(u.capitalize(), str(c.get("personalidade", "normal")), bool(c.get("sem_filtro")), texto) + (
             f"\n\n[AÇÃO JÁ FEITA PELO SERVIDOR] A música já está tocando: \"{t['titulo']}\" ({t.get('canal', '')}). "
             "Responda em UMA frase curta, no seu jeito, avisando que colocou para tocar. Não invente nada além disso.")
-        aviso = (f"(O servidor acabou de colocar a música \"{t['titulo']}\" de {t.get('canal', '')} para tocar, a pedido do usuário. "
-                 "Responda em uma frase curta e natural, no seu jeito, confirmando que já está tocando.)")
+        if c.get("modo") == "recomenda":
+            aviso = (f"(O servidor montou uma seleção de {c.get('total', 'várias')} músicas pelo gosto do usuário e já começou a tocar \"{t['titulo']}\" de {t.get('canal', '')}. "
+                     "Em uma frase curta e natural, no seu jeito, diga que preparou a seleção para ele, sem listar tudo.)")
+        else:
+            aviso = (f"(O servidor acabou de colocar a música \"{t['titulo']}\" de {t.get('canal', '')} para tocar, a pedido do usuário. "
+                     "Responda em uma frase curta e natural, no seu jeito, confirmando que já está tocando.)")
         ok, resp = await asyncio.to_thread(alicia_ponte.perguntar_hermes, env, f"painel-{u}", sistema, aviso, 60)
         if ok and resp.strip():
             ex, fala = alicia_ponte.separar_expressao(resp)
@@ -1081,7 +1357,7 @@ def _buscar_youtube(q: str):
         if e and e.get("id") and len(e["id"]) == 11:
             out.append({"id": e["id"], "titulo": e.get("title", "")[:140], "canal": (e.get("channel") or e.get("uploader") or "")[:80],
                         "capa": f"https://i.ytimg.com/vi/{e['id']}/mqdefault.jpg"})
-    return _so_incorporaveis(out)
+    return out
 
 
 def _so_incorporaveis(itens):

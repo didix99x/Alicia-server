@@ -132,7 +132,7 @@ function fecharPlayer() {
 $('#bFechar').onclick = fecharPlayer;
 function marcaAtual() { const id = fila[idx] && fila[idx].id; $$('#p-musica .mFaixa').forEach(r => r.classList.toggle('atual', r.dataset.id === id)); }
 
-const TABS = [['inicio', 'Início'], ['artistas', 'Artistas'], ['generos', 'Gêneros'], ['musicas', 'Músicas'], ['playlists', 'Playlists'], ['curtidas', 'Curtidas'], ['fila', 'Fila']];
+const TABS = [['inicio', 'Início'], ['descobrir', 'Descobrir'], ['artistas', 'Artistas'], ['generos', 'Gêneros'], ['musicas', 'Músicas'], ['playlists', 'Playlists'], ['curtidas', 'Curtidas'], ['fila', 'Fila']];
 function irMusica(t, k) { vista = { t, k }; renderMusica(); }
 function cartao(tit, sub, capa, cor, redondo, aoClicar, aoTocar) {
   const im = h('div', { class: 'mCapa' + (redondo ? ' redondo' : ''), style: 'background:' + (capa ? `url("${capa}") center/cover` : `linear-gradient(135deg,${cor},#1a1d27)`) }, !capa ? tit.slice(0, 1).toUpperCase() : '');
@@ -171,15 +171,34 @@ function renderMusica() {
   const busca = h('input', { type: 'text', id: 'mBusca', placeholder: '🔍 Buscar músicas e artistas (no servidor e no YouTube) ou colar um link', value: vista.t === 'busca' ? vista.k : '', onkeydown: e => { if (e.key === 'Enter') buscaMusica(); } });
   P.append(cabecalho('Música', 'Toca neste aparelho. Tudo que você ouve fica guardado no servidor, por artista e gênero.'));
   P.append(h('div', { id: 'mTopo' }, busca, h('button', { class: 'btn', onclick: buscaMusica }, 'Buscar'), fila.length > 0 && h('button', { class: 'btn sec', title: 'Para a música e fecha o player', onclick: fecharPlayer }, '✕ Fechar player'), h('label', { class: 'rad' }, h('input', { type: 'checkbox', checked: RADIO, onchange: e => { RADIO = e.target.checked; try { localStorage.setItem('radio', RADIO ? '1' : '0'); } catch (x) {} } }), '📻 Continuar do mesmo gênero')));
-  P.append(h('div', { id: 'mTabs' }, TABS.map(([k, n]) => h('a', { class: 'mTab' + ((t === k || (k === 'artistas' && t === 'artista') || (k === 'generos' && t === 'genero') || (k === 'playlists' && t === 'playlist')) ? ' on' : ''), tabindex: 0, onclick: () => irMusica(k) }, n))));
+  P.append(h('div', { id: 'mTabs' }, TABS.map(([k, n]) => h('a', { class: 'mTab' + ((t === k || (k === 'artistas' && t === 'artista') || (k === 'generos' && t === 'genero') || (k === 'playlists' && t === 'playlist')) ? ' on' : ''), tabindex: 0, onclick: () => irMusica(k) }, n)), h('span', { id: 'mGuardando', class: 'peq', style: 'margin-left:auto;color:var(--acc);white-space:nowrap' })));
   const C = h('div'); P.append(C);
   if (t === 'inicio') {
     if (!srv.total && !Object.keys(lib.playlists).length && !lib.curtidas.length) C.append(vazio('Sua biblioteca está vazia', 'Busque uma música lá em cima e toque nela: ela fica guardada aqui no servidor, organizada por gênero e artista.'));
+    if (DESC) C.append(filaH('Descubra algo novo', DESC.estilos.slice(0, 12).map(cartaoMix), () => irMusica('descobrir')));
     if (srv.recentes.length) C.append(filaH('Adicionadas recentemente', srv.recentes.map((m, i) => cartao(m.titulo, m.canal, m.capa, corDe(m.canal), false, () => tocarLista(srv.recentes, i), () => tocarLista(srv.recentes, i)))));
     if (Object.keys(A).length) C.append(filaH('Artistas', Object.keys(A).slice(0, 24).map(art), () => irMusica('artistas')));
     if (Object.keys(G).length) C.append(filaH('Gêneros', Object.keys(G).map(gen), () => irMusica('generos')));
     if (Object.keys(lib.playlists).length) C.append(filaH('Suas playlists', Object.entries(lib.playlists).map(([n, l]) => cartao(n, l.length + ' músicas', capaDe(l), corDe(n), false, () => irMusica('playlist', n), () => l.length && tocarLista(l, 0))), () => irMusica('playlists')));
     if (lib.curtidas.length) C.append(filaH('Curtidas', lib.curtidas.slice(0, 24).map((m, i) => cartao(m.titulo, m.canal, m.capa, corDe(m.canal), false, () => tocarLista(lib.curtidas, i), () => tocarLista(lib.curtidas, i))), () => irMusica('curtidas')));
+  } else if (t === 'descobrir') {
+    const pedido = h('input', { type: 'text', id: 'mPedido', placeholder: 'Peça à Alicia: "algo pra animar a sexta", "rock dos anos 2000", "calma depois do trabalho"…', onkeydown: e => { if (e.key === 'Enter') recomendarMusica(e.target.value); } });
+    const link = h('input', { type: 'text', id: 'mLinkPl', placeholder: 'Cole o link de uma playlist do YouTube', onkeydown: e => { if (e.key === 'Enter') abrirPlaylistYT(e.target.value); } });
+    C.append(h('div', { class: 'box' }, h('h3', null, '✨ A Alicia recomenda'), h('p', { class: 'mut peq' }, 'Ela monta uma seleção pelo que você já ouve e curtiu, ou surpreende você.'),
+      h('div', { class: 'lin' }, pedido, h('button', { class: 'btn', onclick: () => recomendarMusica(pedido.value) }, 'Recomendar pra mim'))));
+    C.append(h('div', { class: 'box' }, h('h3', null, '📥 Importar playlist do YouTube'), h('p', { class: 'mut peq' }, 'As músicas aparecem aqui; você toca, salva como playlist ou guarda tudo no servidor.'),
+      h('div', { class: 'lin' }, link, h('button', { class: 'btn sec', onclick: () => abrirPlaylistYT(link.value) }, 'Importar'))));
+    if (DESC) {
+      C.append(h('h3', { style: 'margin:18px 0 12px' }, 'Estilos'), grade(DESC.estilos.map(cartaoMix)), h('h3', { style: 'margin:22px 0 12px' }, 'Humor e atividades'), grade(DESC.humores.map(cartaoMix)));
+    } else C.append(h('div', { class: 'skel' }));
+  } else if (t === 'mix') {
+    if (vista.carregando) C.append(h('div', { class: 'box' }, h('h3', null, '✨ ' + vista.titulo), h('p', { class: 'mut' }, 'A Alicia está escolhendo as músicas… Na primeira vez pode levar até 30 segundos.'), h('div', { class: 'skel' })));
+    else if (vista.erro) C.append(vazio('Não consegui montar agora', 'Tente de novo em instantes.'));
+    else {
+      const l = vista.faixas || [];
+      C.append(heroi('✨ ' + vista.titulo, l.length + ' música(s)', capaDe(l), corDe(vista.titulo), l, volta('descobrir'),
+        [h('button', { class: 'btn sec', onclick: () => guardarNoServidor(l) }, '💾 Guardar no servidor'), h('button', { class: 'btn sec', onclick: () => salvarComoPlaylist(vista.titulo, l) }, '📁 Salvar como playlist')]), l.length ? faixas(l) : vazio('Nada encontrado'));
+    }
   } else if (t === 'artistas') C.append(Object.keys(A).length ? grade(Object.keys(A).map(art)) : vazio('Nenhum artista ainda'));
   else if (t === 'artista') { const l = A[vista.k] || []; C.append(heroi(vista.k, l.length + ' música(s) no servidor', capaDe(l), corDe(vista.k), l, volta('artistas')), faixas(l)); }
   else if (t === 'generos') C.append(Object.keys(G).length ? grade(Object.keys(G).map(gen)) : vazio('Nenhum gênero ainda'));
@@ -202,11 +221,51 @@ function renderMusica() {
   }
   scrollTo(0, rolagem);
 }
+let DESC = null, GUARD = { ativo: false, total: 0, feitos: 0, falhas: 0 }, _pg = null;
+function cartaoMix(e) {
+  const c = cartao(e.nome, '', '', corDe(e.nome), false, () => abrirMix(e.id, e.nome), null);
+  const capa = c.querySelector('.mCapa'); capa.textContent = e.emoji; capa.style.fontSize = '3.2rem';
+  c.querySelector('span').remove(); return c;
+}
+async function abrirMix(id, nome) {
+  vista = { t: 'mix', titulo: nome, carregando: true }; renderMusica();
+  try { const r = await api('/api/musica/mix?id=' + encodeURIComponent(id)); vista = { t: 'mix', titulo: r.titulo, faixas: r.faixas }; } catch (e) { vista = { t: 'mix', titulo: nome, erro: true }; } renderMusica();
+}
+async function recomendarMusica(pedido) {
+  vista = { t: 'mix', titulo: 'Seleção da Alicia para você', carregando: true }; renderMusica();
+  try { const r = await post('/api/musica/recomendar', { pedido: pedido || '' }); vista = { t: 'mix', titulo: r.titulo, faixas: r.faixas }; } catch (e) { vista = { t: 'mix', titulo: 'Seleção da Alicia para você', erro: true }; } renderMusica();
+}
+async function abrirPlaylistYT(url) {
+  url = (url || '').trim(); if (!/list=/.test(url)) { toast('Cole o link de uma playlist do YouTube (com list=).', 'erro'); return; }
+  vista = { t: 'mix', titulo: 'Playlist do YouTube', carregando: true }; renderMusica();
+  try { const r = await api('/api/musica/playlist?url=' + encodeURIComponent(url)); vista = { t: 'mix', titulo: r.titulo, faixas: r.faixas }; } catch (e) { vista = { t: 'mix', titulo: 'Playlist do YouTube', erro: true }; } renderMusica();
+}
+function salvarComoPlaylist(nome, l) {
+  const n = (prompt('Nome da playlist:', nome.replace(/^✨\s*/, '')) || '').trim().slice(0, 40); if (!n) return;
+  lib.playlists[n] = lib.playlists[n] || []; l.forEach(t => { if (!tem(lib.playlists[n], t.id)) lib.playlists[n].push(t); }); salvaLib(); toast('Playlist salva: ' + n, 'ok');
+}
+function pintaGuardando() { const e = $('#mGuardando'); if (e) e.textContent = GUARD.ativo ? `💾 Guardando ${GUARD.feitos + GUARD.falhas}/${GUARD.total}…` : ''; }
+function pollGuardando() {
+  if (_pg) return;
+  _pg = setInterval(async () => {
+    try {
+      GUARD = await api('/api/musica/guardando'); pintaGuardando();
+      if (!GUARD.ativo) { clearInterval(_pg); _pg = null; toast(`Pronto! ${GUARD.feitos} música(s) guardada(s)` + (GUARD.falhas ? ` (${GUARD.falhas} não deu)` : ''), 'ok'); await carregaSrv(); if (atual === 'musica' && !['mix', 'busca'].includes(vista.t)) renderMusica(); }
+    } catch (e) {}
+  }, 4000);
+}
+async function guardarNoServidor(l) {
+  try {
+    const r = await post('/api/musica/guardar', { ids: l.map(x => x.id) });
+    toast(r.enfileiradas ? `Guardando ${r.enfileiradas} música(s) em segundo plano. Você pode continuar usando o painel.` : 'Todas essas músicas já estão guardadas.', 'ok');
+    if (r.enfileiradas) { GUARD = { ativo: true, total: r.enfileiradas, feitos: 0, falhas: 0 }; pintaGuardando(); pollGuardando(); }
+  } catch (e) {}
+}
 async function buscaMusica() {
-  const q = ($('#mBusca').value || '').trim(); if (q.length < 2) return; vista = { t: 'busca', k: q, carregando: true }; renderMusica();
+  const q = ($('#mBusca').value || '').trim(); if (q.length < 2) return; if (/youtu/.test(q) && /list=/.test(q)) { abrirPlaylistYT(q); return; } vista = { t: 'busca', k: q, carregando: true }; renderMusica();
   try { resultados = await api('/api/musica/buscar?q=' + encodeURIComponent(q)); } catch (e) { resultados = []; vista.erro = true; } vista.carregando = false; renderMusica();
 }
-async function iniciaMusica() { try { lib = await api('/api/musica/biblioteca'); } catch (e) {} await carregaSrv(); if (atual === 'musica') renderMusica(); }
+async function iniciaMusica() { try { lib = await api('/api/musica/biblioteca'); } catch (e) {} try { DESC = await api('/api/musica/descobrir'); } catch (e) {} await carregaSrv(); if (atual === 'musica') renderMusica(); }
 ENTRAR.musica = async () => { await carregaSrv(); renderMusica(); };
 
 /* ===================== RPG ===================== */
