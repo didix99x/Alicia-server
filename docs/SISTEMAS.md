@@ -213,3 +213,25 @@ A aba **Descobrir** da Música não depende só do que você já ouviu:
 ## 13. App Android
 
 Um aplicativo **leve** que abre o painel no celular e na TV box. Resumo: `WebView` em tela cheia, tela de configuração do endereço, microfone para a Alicia, controle remoto na TV box. Todos os detalhes (função, escolha técnica, comportamento, como compilar e limites) estão em **[APK.md](APK.md)**.
+
+## 14. Modo Servidor (só no notebook)
+
+Um terminal **exclusivo** (`scripts/modo_servidor.cmd`, atalho **"Alicia - Modo Servidor"** na Área de Trabalho) com comandos para o notebook cuidar **só do essencial** do servidor. Pode ser **ligado e desligado** quando quiser.
+
+| Comando | O que faz |
+|---|---|
+| `ligar` | Liga o modo servidor (a tela do notebook **nunca apaga**) |
+| `desligar` | Devolve tudo exatamente como estava |
+| `status` | Estado do modo, CPU/RAM/disco, plano de energia, o que está funcionando e quem mais usa memória |
+| `apps` | Lista navegadores e programas abertos e **pergunta** se quer fechar |
+| `admin` | Reabre o terminal como administrador |
+
+**O que o `ligar` faz**
+- **Energia:** cria o plano "Alicia Servidor": nunca dorme nem hiberna, **tampa fechada não faz nada**, disco e USB sempre ligados, processador de 20% a 100% e **a tela nunca apaga**. O plano anterior é guardado.
+- **Prioridade:** painel, Hermes, Jellyfin, ffmpeg, Tailscale, SSH e monitor ganham prioridade; **os outros programas abertos ficam com prioridade baixa** (nada é fechado sem você mandar).
+- **Serviços do Windows** (precisa de administrador): pausa indexação, atualização, impressão, Xbox, telemetria e relatório de erros. Quais foram pausados fica guardado para religar no `desligar`.
+- **Conferência:** confirma que painel, Hermes, Jellyfin, Tailscale e SSH estão funcionando e liga o que estiver parado.
+
+**Só funciona no notebook:** o comando se recusa por SSH, área de trabalho remota ou qualquer sessão que não seja a do console local, e **não existe botão nem rota para ele no painel** (nem a Alicia consegue usar). Uma tentativa recusada aparece no monitor como alerta de segurança.
+
+**Reinício:** se o notebook reiniciar com o modo ligado, prioridades e serviços voltam ao normal sozinhos; o terminal avisa e o `ligar` reaplica. O estado fica em `dados/modo_servidor.json` e cada ligar/desligar aparece no monitor.

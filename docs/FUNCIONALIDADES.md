@@ -135,6 +135,10 @@ Regras simplificadas, inspiradas no SRD 5.2 (CC-BY-4.0).
 
 **Tailscale** cria uma rede privada entre seus aparelhos: o servidor fica acessível em qualquer lugar **sem abrir porta no roteador**. O firewall só aceita a rede de casa e a rede Tailscale. Há também **SSH** para administrar à distância.
 
+## 🖥️ Modo Servidor
+
+Terminal exclusivo do notebook (atalho **Alicia - Modo Servidor**) com `ligar`, `desligar`, `status`, `apps` e `admin`. Ligado, o notebook foca no servidor: nunca dorme (nem com a tampa fechada), a tela nunca apaga, painel/Hermes/Jellyfin/Tailscale ganham prioridade, os outros programas ficam em segundo plano e serviços dispensáveis do Windows são pausados. `desligar` devolve tudo ao normal. **Só funciona no próprio notebook**, nunca por SSH, área remota ou painel. Detalhes em [SISTEMAS.md](SISTEMAS.md).
+
 ## 🔐 Segurança na prática
 
 Sem portas abertas na internet · senhas em Argon2 · bloqueio por tentativas · visitante limitado no servidor · Hermes do painel **sem terminal e sem acesso a arquivos** · segredos fora do Git · registros sem dados sensíveis. Detalhes e decisões conscientes em [SEGURANCA.md](SEGURANCA.md).
