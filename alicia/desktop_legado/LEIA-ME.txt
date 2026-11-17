@@ -1,0 +1,1 @@
+﻿Esta pasta guarda o app desktop original da Alicia (PyQt6). Ele depende de captura de tela/visão, que foram removidas do Alicia Server, então NÃO roda mais. Fica só como referência. A Alicia agora é usada pelo painel web (painel/app/alicia_ponte.py) com o Hermes.

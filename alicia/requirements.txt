@@ -1,0 +1,5 @@
+﻿# Alicia no servidor: só o necessário para prompts, voz e jogos de cartas (sem tela, sem Ollama).
+requests>=2.31
+Pillow>=10.0
+edge-tts>=7.0.0
+

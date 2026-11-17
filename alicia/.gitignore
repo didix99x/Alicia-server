@@ -1,0 +1,29 @@
+# Segredos e dados pessoais — nunca versionar
+.env
+*.env
+config.json
+alicia_memory.db
+alicia_memory.db-wal
+alicia_memory.db-shm
+gamer_profiles.json
+logs/
+backups/
+exportacoes/
+
+# Ambiente e caches
+.venv/
+__pycache__/
+*.pyc
+.alicia_setup_ok
+.alicia_setup_state.json
+.venv.quebrada-*/
+config.json.bak-*
+build/
+dist/
+*.spec
+relatorio_alicia.txt
+
+# nome reservado do Windows (criado por redirecionamentos > nul feitos no Linux)
+nul
+
+models/
