@@ -48,6 +48,9 @@ _log.addHandler(_h)
 _log.propagate = False
 
 
+_ult_atividade = {}   # (usuário, página/jogo) -> quando foi registrado pela última vez (evita repetir linhas)
+
+
 def registrar(servico, quem, ip, o_que, resultado="ok", tipo="info"):
     """Grava uma linha JSON no log. tipo: info | ok | aviso | erro | seguranca."""
     linha = {"t": datetime.now().strftime("%d/%m %H:%M:%S"), "ts": time.time(), "servico": servico,
@@ -463,15 +466,29 @@ def _vigiar_uma_vez():
                 continue
             id_ = s.get("Id")
             agora.add(id_)
-            if _jf_vistos.get(id_) != item.get("Id"):
-                _jf_vistos[id_] = item.get("Id")
+            titulo = item.get("Name", "?")
+            if item.get("SeriesName"):
+                titulo = f"{item['SeriesName']} — {titulo}"
+            if id_ not in _jf_vistos or _jf_vistos[id_]["item"] != item.get("Id"):
+                if id_ in _jf_vistos:
+                    _jf_fim(_jf_vistos[id_])
                 conv = (s.get("PlayState") or {}).get("PlayMethod", "?")
-                registrar("JELLYFIN", s.get("UserName") or "-", s.get("RemoteEndPoint") or "-",
-                          f"começou a assistir '{item.get('Name', '?')}' em {s.get('DeviceName', '?')} ({conv})",
+                _jf_vistos[id_] = {"item": item.get("Id"), "titulo": titulo, "quem": s.get("UserName") or "-", "ip": s.get("RemoteEndPoint") or "-", "t0": time.time(), "pausado": False}
+                registrar("FILME", _jf_vistos[id_]["quem"], _jf_vistos[id_]["ip"],
+                          f"COMEÇOU a assistir '{titulo}' em {s.get('DeviceName', '?')} ({'convertendo vídeo, pesa no notebook' if conv == 'Transcode' else 'direto, sem converter'})",
                           "ok", "aviso" if conv == "Transcode" else "ok")
+            pausado = bool((s.get("PlayState") or {}).get("IsPaused"))
+            v = _jf_vistos[id_]
+            if pausado != v["pausado"]:
+                v["pausado"] = pausado
+                registrar("FILME", v["quem"], v["ip"], f"{'pausou' if pausado else 'continuou'} '{titulo}'", "ok", "info")
         for k in [k for k in _jf_vistos if k not in agora]:
-            _jf_vistos.pop(k)
+            _jf_fim(_jf_vistos.pop(k))
 
+
+def _jf_fim(v):
+    seg = int(time.time() - v["t0"])
+    registrar("FILME", v["quem"], v["ip"], f"PAROU de assistir '{v['titulo']}' (viu cerca de {seg // 60} min)", "ok", "info")
 
 async def _vigia():
     psutil.cpu_percent(interval=None)
@@ -480,7 +497,7 @@ async def _vigia():
             await asyncio.to_thread(_vigiar_uma_vez)
         except Exception:
             pass
-        await asyncio.sleep(20)
+        await asyncio.sleep(10)
 
 
 @app.on_event("startup")
@@ -725,6 +742,10 @@ async def jogos_save_gravar(request: Request, pasta: str, arquivo: str):
     tmp = f.with_suffix(".tmp")
     tmp.write_bytes(dados)
     tmp.replace(f)  # troca atômica: nunca fica um save pela metade
+    ch = (u, pasta, arquivo)
+    if time.time() - _ult_atividade.get(ch, 0) > 300:
+        _ult_atividade[ch] = time.time()
+        registrar("JOGOS", u, ip_de(request), f"salvou o progresso de '{_nome_bonito(Path(arquivo))}' ({pasta})", "ok", "info")
     return {"ok": True}
 
 
@@ -732,7 +753,33 @@ async def jogos_save_gravar(request: Request, pasta: str, arquivo: str):
 async def jogos_inicio(request: Request):
     u = exigir_login(request)
     c = await request.json()
-    registrar("JOGOS", u, ip_de(request), f"abriu '{str(c.get('arquivo', ''))[:60]}' ({str(c.get('pasta', ''))[:6]}) no navegador", "ok", "ok")
+    pasta = str(c.get("pasta", "")) if str(c.get("pasta", "")) in CONSOLES else "?"
+    registrar("JOGOS", u, ip_de(request), f"ABRIU o jogo '{_nome_bonito(Path(str(c.get('arquivo', ''))[:100]))}' ({pasta})", "ok", "ok")
+    return {"ok": True}
+
+
+@app.post("/api/jogos/fim")
+async def jogos_fim(request: Request):
+    u = exigir_login(request)
+    c = await request.json()
+    seg = max(0, min(int(c.get("segundos", 0) or 0), 86400))
+    pasta = str(c.get("pasta", "")) if str(c.get("pasta", "")) in CONSOLES else "?"
+    registrar("JOGOS", u, ip_de(request), f"FECHOU o jogo '{_nome_bonito(Path(str(c.get('arquivo', ''))[:100]))}' ({pasta}) depois de {seg // 60} min {seg % 60:02d} s", "ok", "info")
+    return {"ok": True}
+
+
+PAGINAS_REG = {"inicio": "Início", "alicia": "Alicia", "arquivos": "Arquivos", "filmes": "Filmes e Séries", "jogos": "Jogos", "musica": "Música", "rpg": "RPG",
+               "servidor": "Servidor", "registros": "Registros", "config": "Configurações"}
+
+
+@app.post("/api/atividade")
+async def atividade(request: Request):
+    """O painel avisa quando alguém troca de página, para o monitor mostrar 'fulano abriu Filmes'."""
+    u = exigir_login(request)
+    p = str((await request.json()).get("pagina", ""))
+    if p in PAGINAS_REG and time.time() - _ult_atividade.get((u, p), 0) > 20:
+        _ult_atividade[(u, p)] = time.time()
+        registrar("PÁGINA", u, ip_de(request), f"abriu a página {PAGINAS_REG[p]}", "ok", "info")
     return {"ok": True}
 
 

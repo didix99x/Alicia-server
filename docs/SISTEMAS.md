@@ -186,8 +186,8 @@ A aba **Descobrir** da Música não depende só do que você já ouviu:
 - **O que registra:** requisições do painel (método, endereço, código, tempo), logins (certos, errados, bloqueios), arquivos (abrir, enviar, baixar, apagar), conversas e chamadas à API da NVIDIA (**só metadados**), Jellyfin, música, jogos, RPG, mudanças de usuário/visitante e eventos do sistema (alertas de CPU, memória, disco cheio e **saúde do HD**).
 - **Privacidade:** **nunca** registra senhas, chaves, tokens, conteúdo de arquivos nem de conversas.
 - **Dois jeitos de ver:**
-  - **Terminal** (`scripts/monitor.py`): abre sozinho no logon e reinicia se for fechado; cores por tipo; teclas para filtrar (1–4 por serviço, `s` segurança, `e` erros, `t` tudo, `p` pausar).
-  - **Painel → Registros:** ao vivo, com filtros por tipo, serviço e texto.
+  - **Terminal** (`scripts/monitor.py`): abre sozinho no logon e reinicia se for fechado. Mostra **a atividade das pessoas** (não o ruído técnico): quem entrou, que página abriu, **qual jogo abriu e por quanto tempo jogou**, **qual filme ou série está assistindo** (e se o vídeo está sendo convertido, o que pesa no notebook), **que música ouve**, conversas com a Alicia, RPG, arquivos, segurança e erros. O cabeçalho mostra quem está online e o que cada um está jogando, assistindo e ouvindo agora. Teclas: `a` atividade, `j` jogos, `f` filmes, `m` música, `l` Alicia, `r` RPG, `o` arquivos, `g` login, `s` segurança, `e` erros, `h` tudo com cada requisição, `p` pausar, `q` sair.
+  - **Painel → Registros:** ao vivo, com o filtro **👀 Atividade** (padrão) e filtros por tipo, serviço e texto.
 - **Alertas de segurança** em destaque: várias senhas erradas, bloqueio de IP, visitante tentando entrar em área restrita…
 
 ---

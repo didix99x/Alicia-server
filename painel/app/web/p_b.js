@@ -40,11 +40,13 @@ function ajustaJogo() {
   [$('#barra'), $('#nav')].forEach(e => { if (e && getComputedStyle(e).display !== 'none' && getComputedStyle(e).position === 'fixed') { const r = e.getBoundingClientRect(); if (r.top > innerHeight / 2) topo = Math.min(topo, r.top); } });
   o.style.bottom = (innerHeight - topo) + 'px'; o.style.left = '0';
 }
+let JOGO_ATUAL = null;
 function abrirJogo(pasta, arquivo) {
+  JOGO_ATUAL = { pasta, arquivo, t0: Date.now() };
   $('#jogoFrame').src = '/jogar?c=' + encodeURIComponent(pasta) + '&a=' + encodeURIComponent(arquivo) + '&embed=1';
   $('#jogoOverlay').style.display = 'block'; ajustaJogo(); setTimeout(() => { try { $('#jogoFrame').contentWindow.focus(); } catch (e) {} }, 600);
 }
-function fecharJogo() { $('#jogoOverlay').style.display = 'none'; $('#jogoFrame').src = 'about:blank'; }
+function fecharJogo() { if (JOGO_ATUAL) { const j = JOGO_ATUAL; JOGO_ATUAL = null; try { fetch('/api/jogos/fim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pasta: j.pasta, arquivo: j.arquivo, segundos: Math.round((Date.now() - j.t0) / 1000) }), keepalive: true }); } catch (e) {} } $('#jogoOverlay').style.display = 'none'; $('#jogoFrame').src = 'about:blank'; }
 addEventListener('message', e => { if (e.origin === location.origin && e.data === 'fechar-jogo') fecharJogo(); });
 addEventListener('resize', ajustaJogo);
 const alturaBarra = () => document.documentElement.style.setProperty('--barraH', getComputedStyle($('#barra')).display === 'none' ? '0px' : $('#barra').offsetHeight + 'px');

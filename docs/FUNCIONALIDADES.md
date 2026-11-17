@@ -111,7 +111,7 @@ Regras simplificadas, inspiradas no SRD 5.2 (CC-BY-4.0).
 
 - **Servidor:** gráficos ao vivo de CPU, memória e disco; estado de cada serviço (painel, Hermes, Jellyfin, Tailscale); controle do Hermes; saúde do HD.
 - **Registros:** **quem acessou o quê, quando e de onde**, ao vivo, com filtro. **Nunca** guarda senha, chave, conteúdo de arquivo ou de conversa.
-- **Monitor em terminal** abre no logon do notebook para acompanhar sem o navegador.
+- **Monitor em terminal** abre no logon do notebook e mostra, ao vivo, **quem abriu qual jogo (e por quanto tempo jogou), quem está assistindo qual filme, quem ouve qual música**, páginas abertas, conversas com a Alicia e alertas, com filtros por tecla.
 - **Alertas:** disco acima de 90%, HD com problema, tentativas de senha, serviço caído.
 - **Verificar tudo:** testa 11 itens (painel, IA, voz, Hermes, Jellyfin, pastas, backup…).
 

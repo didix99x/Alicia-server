@@ -204,9 +204,9 @@ ENTRAR.servidor = async () => {
 };
 
 /* ===================== REGISTROS ===================== */
-const LG = { linhas: [], filtro: 'todos', serv: '', texto: '', pausa: false, es: null };
+const LG = { linhas: [], filtro: 'atividade', serv: '', texto: '', pausa: false, es: null };
 function lgPassa(l) {
-  if (LG.filtro === 'seguranca' && l.tipo !== 'seguranca') return false; if (LG.filtro === 'erros' && !['erro', 'seguranca'].includes(l.tipo)) return false; if (LG.filtro === 'avisos' && l.tipo !== 'aviso') return false;
+  if (LG.filtro === 'atividade' && l.servico === 'PAINEL' && l.tipo === 'ok') return false; if (LG.filtro === 'seguranca' && l.tipo !== 'seguranca') return false; if (LG.filtro === 'erros' && !['erro', 'seguranca'].includes(l.tipo)) return false; if (LG.filtro === 'avisos' && l.tipo !== 'aviso') return false;
   if (LG.serv && l.servico !== LG.serv) return false; if (LG.texto && !(`${l.servico} ${l.quem} ${l.ip} ${l.o_que} ${l.resultado}`).toLowerCase().includes(LG.texto)) return false; return true;
 }
 const lgLinha = l => h('div', { class: l.tipo }, l.t + '  ', h('span', { class: 'sv' }, l.servico), `${l.quem} (${l.ip})  ${l.o_que}  → ${l.resultado}`);
@@ -217,10 +217,10 @@ function lgPinta() {
 ENTRAR.registros = async () => {
   const P = $('#p-registros'); P.textContent = '';
   const chip = (id, n) => h('span', { class: 'chip' + (LG.filtro === id ? ' on' : ''), tabindex: 0, onclick: () => { LG.filtro = id; ENTRAR.registros(); } }, n);
-  const servs = ['', 'PAINEL', 'LOGIN', 'ARQUIVOS', 'ALICIA', 'NVIDIA', 'JELLYFIN', 'JOGOS', 'MÚSICA', 'RPG', 'SEGURANÇA', 'SISTEMA'];
-  P.append(cabecalho('Registros', 'Quem acessou o quê, ao vivo. Fica guardado por 30 dias. Nunca aparecem senhas, chaves nem conteúdo de conversas.',
+  const servs = ['', 'PÁGINA', 'JOGOS', 'FILME', 'MÚSICA', 'ALICIA', 'RPG', 'ARQUIVOS', 'LOGIN', 'NVIDIA', 'SEGURANÇA', 'SISTEMA', 'PAINEL'];
+  P.append(cabecalho('Registros', 'Quem entrou, o que abriu, jogou, assistiu e ouviu, ao vivo. Fica guardado por 30 dias. Nunca aparecem senhas, chaves nem conteúdo de conversas.',
     h('button', { class: 'btn sec', id: 'lgPausa', onclick: e => { LG.pausa = !LG.pausa; e.target.textContent = LG.pausa ? '▶ Continuar' : '⏸ Pausar'; } }, LG.pausa ? '▶ Continuar' : '⏸ Pausar')));
-  P.append(h('div', { class: 'lin', style: 'margin-bottom:12px' }, chip('todos', 'Tudo'), chip('seguranca', '🛡️ Segurança'), chip('erros', 'Erros'), chip('avisos', 'Avisos'),
+  P.append(h('div', { class: 'lin', style: 'margin-bottom:12px' }, chip('atividade', '👀 Atividade'), chip('todos', 'Tudo (com cada requisição)'), chip('seguranca', '🛡️ Segurança'), chip('erros', 'Erros'), chip('avisos', 'Avisos'),
     h('select', { onchange: e => { LG.serv = e.target.value; lgPinta(); } }, servs.map(s => h('option', { value: s, selected: s === LG.serv }, s || 'Todos os serviços'))),
     h('input', { type: 'text', placeholder: 'Filtrar por texto…', value: LG.texto, oninput: e => { LG.texto = e.target.value.toLowerCase(); lgPinta(); } })));
   P.append(h('div', { class: 'log', id: 'lgBox' }, 'Carregando…'));

@@ -146,7 +146,7 @@ function montaNav() {
 }
 function ir(p) {
   if (!PAGES.some(x => x[0] === p)) p = 'inicio';
-  atual = p;
+  atual = p; try { fetch('/api/atividade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pagina: p }), keepalive: true }); } catch (e) {}
   $('#main').classList.toggle('imersivo', p === 'filmes');
   $$('.sec').forEach(s => s.classList.toggle('show', s.id === 'p-' + p));
   $$('#nav a.nv[data-p]').forEach(a => a.classList.toggle('on', a.dataset.p === p));
