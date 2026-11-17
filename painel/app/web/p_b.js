@@ -33,7 +33,7 @@ ENTRAR.filmes = () => {
     h('a', { class: 'btn sec peq', href: jfUrl(), target: '_blank' }, '↗ Outra aba')), caixa);
 };
 /* ===================== JOGOS ===================== */
-const JG = { dados: [], q: '', tudo: {} };
+const JG = { dados: [], q: '', tudo: {}, filtro: 'todos' };
 function ajustaJogo() {
   const o = $('#jogoOverlay'); if (o.style.display !== 'block') return;
   let topo = innerHeight;
@@ -62,21 +62,56 @@ async function jogosEnviar(arqs, consoleZip, st) {
   }
   st.textContent = ok ? ok + ' arquivo(s) enviado(s) ✓' : ''; if (ok) { toast('Jogos adicionados!', 'ok'); jogosPinta(true); }
 }
+const DESEMP = { leve: ['⚡', 'Leve', 'ok'], 'médio': ['⚖️', 'Médio', 'av'], pesado: ['🔥', 'Pesado', 'er'] };
+async function jogoFav(c, j) {
+  const antes = j.fav; j.fav = !antes; jogosPinta();
+  try { await api('/api/jogos/favorito', { method: 'POST', body: JSON.stringify({ pasta: c.pasta, arquivo: j.arquivo, fav: j.fav }) }); toast(j.fav ? '⭐ ' + j.nome + ' nos favoritos' : 'Tirado dos favoritos', 'ok'); }
+  catch (e) { j.fav = antes; jogosPinta(); }
+}
+function cartaoJogo(c, j) {
+  const img = h('img', { class: 'capa', loading: 'lazy', alt: '', src: `/api/jogos/imagem?pasta=${encodeURIComponent(c.pasta)}&arquivo=${encodeURIComponent(j.arquivo)}` });
+  img.onerror = () => img.remove();
+  const ini = j.nome.replace(/^(the|a|an)\s+/i, '').split(/[\s\-:]+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  const card = h('div', { class: 'jogo', tabindex: 0, style: `background:linear-gradient(145deg,${c.cor}dd,#1a1d27)`, onclick: () => abrirJogo(c.pasta, j.arquivo), onkeydown: e => { if (e.key === 'Enter' && e.target === card) card.click(); } },
+    h('i', { class: 'inicial' }, ini), img,
+    h('button', { class: 'fav' + (j.fav ? ' on' : ''), title: j.fav ? 'Tirar dos favoritos' : 'Favoritar', 'aria-label': 'Favoritar ' + j.nome, onclick: e => { e.stopPropagation(); jogoFav(c, j); } }, j.fav ? '★' : '☆'),
+    h('em', { class: 'selo', style: 'background:' + c.cor }, c.pasta), h('b', null, j.nome), h('span', null, '▶ Jogar'));
+  return card;
+}
+function painelEmuladores() {
+  return h('div', { class: 'emus' }, JG.dados.map(c => {
+    const e = c.emulador, d = DESEMP[e.desempenho] || DESEMP.leve, ativo = JG.filtro === c.pasta;
+    return h('div', { class: 'emu' + (ativo ? ' ativo' : '') + (e.pronto ? '' : ' off'), tabindex: 0, style: 'border-top-color:' + c.cor, title: e.dica, onclick: () => { JG.filtro = ativo ? 'todos' : c.pasta; jogosPinta(); }, onkeydown: ev => { if (ev.key === 'Enter') ev.target.click(); } },
+      h('b', null, c.nome), h('span', { class: 'mut peq' }, '🕹️ ' + e.nome + ' · ' + c.jogos.length + ' jogo(s)'),
+      h('div', { class: 'etq' },
+        h('span', { class: 'pill ' + (e.pronto ? 'ok' : 'er') }, e.pronto ? '✓ Emulador pronto' : '✗ Emulador ausente'),
+        h('span', { class: 'pill ' + d[2], title: e.dica }, d[0] + ' ' + d[1]),
+        e.bios !== null && h('span', { class: 'pill ' + (e.bios ? 'ok' : 'av'), title: 'Jogos/BIOS' }, e.bios ? '✓ BIOS' : 'BIOS opcional')));
+  }));
+}
 async function jogosPinta(recarrega) {
   if (recarrega || !JG.dados.length) { try { JG.dados = await api('/api/jogos'); CJOGOS = JG.dados; CJ_T = Date.now(); } catch (e) { return; } }
   const L = $('#jgLista'); if (!L) return; L.textContent = ''; const q = JG.q.toLowerCase(); let total = 0;
+  const E = $('#jgEmus'); if (E) { E.textContent = ''; E.append(painelEmuladores()); }
+  const chips = $('#jgChips'); if (chips) {
+    chips.textContent = ''; const nf = JG.dados.reduce((n, c) => n + c.jogos.filter(j => j.fav).length, 0);
+    [['todos', 'Todos'], ['fav', '⭐ Favoritos (' + nf + ')']].concat(JG.dados.filter(c => c.jogos.length).map(c => [c.pasta, c.pasta])).forEach(([k, t]) =>
+      chips.append(h('button', { class: 'chip' + (JG.filtro === k ? ' on' : ''), onclick: () => { JG.filtro = k; jogosPinta(); } }, t)));
+  }
+  const filtroConsole = JG.filtro !== 'todos' && JG.filtro !== 'fav' ? JG.filtro : null;
+  if (JG.filtro === 'todos' && !q) {                       // faixa de favoritos no topo
+    const fav = []; JG.dados.forEach(c => c.jogos.forEach(j => { if (j.fav) fav.push([c, j]); }));
+    if (fav.length) { total += fav.length; L.append(h('div', { class: 'rowh' }, h('h3', null, '⭐ Favoritos', h('span', { class: 'mut peq', style: 'font-weight:400' }, '  ' + fav.length + ' jogo(s)'))), h('div', { class: 'grade' }, fav.map(([c, j]) => cartaoJogo(c, j)))); }
+  }
   JG.dados.forEach(c => {
-    const js = c.jogos.filter(j => !q || j.nome.toLowerCase().includes(q)); if (!js.length) return; total += js.length;
-    const todos = JG.tudo[c.pasta] || q, vis = todos ? js : js.slice(0, 12);
-    L.append(h('div', { class: 'rowh' }, h('h3', null, c.nome, h('span', { class: 'mut peq', style: 'font-weight:400' }, '  ' + js.length + ' jogo(s)')), js.length > 12 && !q && h('a', { onclick: () => { JG.tudo[c.pasta] = !JG.tudo[c.pasta]; jogosPinta(); } }, todos ? 'Mostrar menos' : 'Mostrar todos (' + js.length + ')')));
-    L.append(h('div', { class: 'grade' }, vis.map(j => {
-      const capa = j.capa ? `linear-gradient(transparent,rgba(0,0,0,.6)),url("/api/jogos/capa?pasta=${encodeURIComponent(c.pasta)}&arquivo=${encodeURIComponent(j.capa)}")` : `linear-gradient(145deg,${c.cor}dd,#1a1d27)`;
-      return h('div', { class: 'jogo', tabindex: 0, style: 'background:' + capa + ';background-size:cover;background-position:center', onclick: () => abrirJogo(c.pasta, j.arquivo), onkeydown: e => { if (e.key === 'Enter') e.target.click(); } }, h('b', null, j.nome), h('span', null, '▶ Jogar'));
-    })));
+    if (filtroConsole && c.pasta !== filtroConsole) return;
+    const js = c.jogos.filter(j => (!q || j.nome.toLowerCase().includes(q)) && (JG.filtro !== 'fav' || j.fav)); if (!js.length) return; total += js.length;
+    const todos = JG.tudo[c.pasta] || q || JG.filtro !== 'todos', vis = todos ? js : js.slice(0, 12);
+    L.append(h('div', { class: 'rowh' }, h('h3', null, c.nome, h('span', { class: 'mut peq', style: 'font-weight:400' }, '  ' + js.length + ' jogo(s)')), js.length > 12 && !q && JG.filtro === 'todos' && h('a', { onclick: () => { JG.tudo[c.pasta] = !JG.tudo[c.pasta]; jogosPinta(); } }, todos ? 'Mostrar menos' : 'Mostrar todos (' + js.length + ')')));
+    L.append(h('div', { class: 'grade' }, vis.map(j => cartaoJogo(c, j))));
   });
-  if (!total) L.append(JG.dados.some(c => c.jogos.length) ? vazio('Nenhum jogo com esse nome.') : vazio('Nenhum jogo ainda', 'Abra "Adicionar jogos" acima e envie os seus jogos (Super Nintendo, Nintendo 64, PlayStation…). Eu coloco cada um na pasta certa.'));
-}
-ENTRAR.jogos = () => {
+  if (!total) L.append(JG.filtro === 'fav' && !q ? vazio('Nenhum favorito ainda', 'Toque na ☆ de um jogo para guardá-lo aqui.') : JG.dados.some(c => c.jogos.length) ? vazio('Nenhum jogo com esse nome.') : vazio('Nenhum jogo ainda', 'Abra "Adicionar jogos" acima e envie os seus jogos (Super Nintendo, Nintendo 64, PlayStation…). Eu coloco cada um na pasta certa.'));
+}ENTRAR.jogos = () => {
   const P = $('#p-jogos'); P.textContent = '';
   const st = h('p', { class: 'mut peq' }), arq = h('input', { type: 'file', multiple: true, style: 'display:none' });
   const cons = h('select', null, h('option', { value: '' }, 'Console dos arquivos .zip…'), ['Nintendo', 'Super Nintendo', 'Nintendo 64', 'Game Boy Advance', 'Game Boy', 'PlayStation'].map(c => h('option', null, c)));
@@ -84,9 +119,9 @@ ENTRAR.jogos = () => {
   const drop = h('div', { class: 'drop', style: 'margin-top:10px' }, 'Arraste os jogos aqui'); zonaEnvio(drop, a => jogosEnviar(a, cons.value, st));
   P.append(cabecalho('Jogos', 'Jogue direto no navegador, sem instalar nada. Seu progresso fica salvo no servidor.', h('input', { type: 'text', placeholder: '🔍 Buscar jogo…', style: 'min-width:220px', oninput: debounce(e => { JG.q = e.target.value; jogosPinta(); }, 200), value: JG.q })));
   if (!EU.convidado) P.append(h('details', { class: 'box' }, h('summary', { style: 'cursor:pointer;font-weight:700' }, '➕ Adicionar jogos'),
-    h('p', { class: 'mut peq' }, 'Envie os arquivos dos seus jogos. O painel descobre o console pelo arquivo (inclusive dentro do .zip) e guarda na pasta certa. Para PlayStation, a BIOS vai na pasta Jogos/BIOS. Capa: envie uma imagem com o mesmo nome do jogo.'),
+    h('p', { class: 'mut peq' }, 'Envie os arquivos dos seus jogos. O painel descobre o console pelo arquivo (inclusive dentro do .zip) e guarda na pasta certa. Para PlayStation, a BIOS vai na pasta Jogos/BIOS. As capas oficiais são buscadas sozinhas; para usar uma sua, envie uma imagem com o mesmo nome do jogo.'),
     h('div', { class: 'lin' }, h('button', { class: 'btn', onclick: () => arq.click() }, 'Escolher arquivos'), cons, arq), drop, st));
-  P.append(h('div', { id: 'jgLista' }, h('div', { class: 'skel' }))); jogosPinta(true);
+  P.append(h('div', { id: 'jgEmus' }), h('div', { id: 'jgChips', class: 'chips' }), h('div', { id: 'jgLista' }, h('div', { class: 'skel' }))); jogosPinta(true);
 };
 
 /* ===================== MÚSICA ===================== */

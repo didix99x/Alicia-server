@@ -126,6 +126,12 @@ Guia do usuário: [JOGOS.md](JOGOS.md).
 
 ---
 
+### Favoritos, capas e emuladores
+
+- **Favoritos:** a ☆ em cada jogo guarda o título na lista **de cada usuário** (`dados/jogos_fav_<usuário>.json`). Os favoritos aparecem numa faixa no topo e no filtro **⭐ Favoritos**.
+- **Capas automáticas:** o servidor procura a **capa oficial da caixa** no acervo público *libretro-thumbnails*, casando o nome do arquivo com o do acervo (ignora região, `, The` e pontuação, com tolerância a pequenas diferenças). A capa é baixada **uma vez** e guardada em `Jogos/Capas/`; se você enviar uma imagem com o mesmo nome do jogo, ela tem prioridade. Jogos sem capa (hacks, traduções) mostram um bloco colorido com as iniciais.
+- **Painel de emuladores:** um cartão por console com o emulador usado (FCEUmm, Snes9x, Mupen64Plus-Next, mGBA, Gambatte, PCSX-ReARMed), se está **pronto** no servidor, o **peso** (⚡ leve, ⚖️ médio, 🔥 pesado) e, no PlayStation, se a **BIOS** foi encontrada. Clicar no cartão filtra os jogos daquele console.
+
 ## 8. Música
 
 **Visão geral:** o som toca **no aparelho em que você está**; o servidor busca, guarda e organiza.

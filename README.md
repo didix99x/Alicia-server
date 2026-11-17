@@ -74,7 +74,7 @@ Busca em biblioteca e YouTube, **toca no aparelho que você está usando** (não
 <td valign="top">
 
 ### 🎮 Jogos retrô no navegador
-**Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation.** Biblioteca em blocos como num console, **console detectado pelo conteúdo do arquivo**, progresso **salvo no servidor** e a música continua tocando enquanto você joga.
+**Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation.** Biblioteca em blocos com **capas oficiais** (buscadas sozinhas), botão de **⭐ favoritar**, **painel de emuladores** (qual é, se está pronto, se é leve ou pesado), **console detectado pelo conteúdo do arquivo**, progresso **salvo no servidor** e a música continua tocando enquanto você joga.
 
 </td>
 </tr>
@@ -147,7 +147,7 @@ Scripts que instalam tudo, criam **tarefas agendadas** (painel, Hermes, monitor,
   </tr>
   <tr>
     <td><img src="docs/img/04-musica.png" alt="Música"><br><sub><b>Música</b>: biblioteca por artista e gênero, organizada como o Jellyfin.</sub></td>
-    <td><img src="docs/img/08-jogos.png" alt="Jogos"><br><sub><b>Jogos</b>: biblioteca em blocos, joga direto no navegador, progresso salvo no servidor.</sub></td>
+    <td><img src="docs/img/08-jogos.png" alt="Jogos"><br><sub><b>Jogos</b>: biblioteca em blocos com **capas oficiais**, **favoritos**, painel de **emuladores**, joga direto no navegador, progresso salvo no servidor.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/img/07-musica-player.png" alt="Player"><br><sub><b>Player</b> que fica por cima de tudo: a música continua enquanto você navega ou joga.</sub></td>

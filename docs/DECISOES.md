@@ -1,4 +1,4 @@
-﻿# Decisões
+# Decisões
 - **Pasta do projeto**: `alicia-server` ao lado de `alicia`, repositório Git próprio. O `.env` e o banco da Alicia não foram copiados (segredos/dados pessoais); o banco foi guardado em `dados_originais/` para migração futura.
 - **Python 3.12** (via winget, escopo de usuário, sem admin). Alternativa descartada: Python 3.14 que o instalador do Hermes baixa sozinho — o Hermes cuida do próprio Python; a Alicia/painel usam 3.12.
 - **Hermes no Windows nativo**: o README oficial diz que o Windows nativo é suportado (`iex (irm https://hermes-agent.nousresearch.com/install.ps1)`). Ainda não instalado; será feito na Etapa 6.
@@ -46,3 +46,7 @@ Você enviou `Alicia-project-main.zip` (versão mais nova). A cópia em `alicia/
 
 - **Alicia sempre sabe o que o servidor faz:** um bloco fixo no prompt diz que ela PODE tocar música, controlar o player e analisar o servidor (antes ela às vezes respondia que não tinha essa função). O comentário depois de um pedido de música recebe um aviso neutro (o servidor acabou de colocar X para tocar) em vez do pedido cru, e uma frase padrão substitui qualquer resposta que negue a função.
 - **Análise do servidor por leitura:** o painel mede e entrega os dados à Alicia; ela não ganha terminal nem ferramentas de sistema (continua só leitura).
+## Capas dos jogos
+- **Decisão:** buscar capas oficiais no acervo público *libretro-thumbnails* sob demanda, uma vez por jogo, e guardar no servidor. Só imagens de capa são baixadas (nenhum jogo, BIOS ou outro conteúdo).
+- **Por quê:** a biblioteca tem centenas de jogos e ninguém quer mandar capa uma a uma. **Alternativas descartadas:** API paga com chave (exigiria cadastro) e capas geradas por IA (lentas e imprecisas).
+- **Limite:** o casamento é pelo nome; hacks e traduções amadoras muitas vezes não têm capa e usam o bloco colorido.

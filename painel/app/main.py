@@ -188,7 +188,7 @@ async def monitor(request: Request, call_next):
         registrar("SEGURANÇA", quem, ip_de(request), f"visitante tentou acessar {p}", "negado", "seguranca")
         return JSONResponse({"detail": "Essa parte é só para os moradores da casa."}, status_code=403)
     resp = await call_next(request)
-    if (p.startswith(("/api/logs", "/static", "/ejs", "/api/musica/audio", "/api/jogos/arquivo", "/api/jogos/capa", "/api/jogos/save", "/api/alicia/imagem", "/api/status"))
+    if (p.startswith(("/api/logs", "/static", "/ejs", "/api/musica/audio", "/api/jogos/arquivo", "/api/jogos/capa", "/api/jogos/imagem", "/api/jogos/save", "/api/alicia/imagem", "/api/status"))
             or request.query_params.get("silencio")):
         return resp  # evita encher o log com o próprio monitor
     ms = int((time.time() - t0) * 1000)
@@ -660,6 +660,7 @@ def _organizar_jogos():
 async def jogos_lista(request: Request):
     exigir_login(request)
     await asyncio.to_thread(_organizar_jogos)
+    favs = set(_ler_favoritos(exigir_login(request)))
     out = []
     for pasta, (nucleo, nome, cor, exts) in CONSOLES.items():
         itens = []
@@ -667,7 +668,9 @@ async def jogos_lista(request: Request):
             if f.is_file() and f.suffix.lower() in exts:
                 capa = next((f"{f.stem}{e}" for e in (".png", ".jpg", ".jpeg") if (f.parent / f"{f.stem}{e}").exists()), None)
                 itens.append({"arquivo": f.name, "nome": _nome_bonito(f), "capa": capa})
-        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens})
+        for it in itens:
+            it["fav"] = f"{pasta}/{it['arquivo']}" in favs
+        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens, "emulador": _info_emulador(pasta, nucleo)})
     return out
 
 def _arquivo_jogo(pasta: str, arquivo: str) -> Path:
@@ -738,6 +741,140 @@ async def jogos_capa(request: Request, pasta: str, arquivo: str):
     exigir_login(request)
     return FileResponse(_arquivo_jogo(pasta, arquivo))
 
+
+# ----- Favoritos, capas automáticas e informações dos emuladores -----
+EMULADORES = {  # pasta -> (nome do emulador, desempenho, descrição curta, pasta de capas do libretro)
+    "Nintendo": ("FCEUmm", "leve", "Roda em qualquer aparelho.", "Nintendo - Nintendo Entertainment System"),
+    "Super Nintendo": ("Snes9x", "leve", "Roda em qualquer aparelho.", "Nintendo - Super Nintendo Entertainment System"),
+    "Nintendo 64": ("Mupen64Plus-Next", "pesado", "Pede celular/TV box forte ou computador.", "Nintendo - Nintendo 64"),
+    "Game Boy Advance": ("mGBA", "leve", "Roda em qualquer aparelho.", "Nintendo - Game Boy Advance"),
+    "Game Boy": ("Gambatte", "leve", "Roda em qualquer aparelho.", "Nintendo - Game Boy Color"),
+    "PlayStation": ("PCSX-ReARMed", "médio", "Melhor com a BIOS (opcional) em Jogos/BIOS.", "Sony - PlayStation"),
+}
+CAPAS_DIR = JOGOS_DIR / "Capas"
+CAPAS_DIR.mkdir(exist_ok=True)
+
+
+def _info_emulador(pasta: str, nucleo: str) -> dict:
+    nome, desemp, dica, _ = EMULADORES[pasta]
+    arq = {"nes": "fceumm", "snes": "snes9x", "n64": "mupen64plus_next", "gba": "mgba", "gb": "gambatte", "psx": "pcsx_rearmed"}.get(nucleo, nucleo)
+    nucleo_ok = EJS_DIR.exists() and any((EJS_DIR / "cores").glob(f"{arq}-*"))
+    bios = None
+    if pasta == "PlayStation":
+        bios = any((JOGOS_DIR / "BIOS" / n).exists() for n in ("scph5501.bin", "scph1001.bin", "scph5500.bin", "scph5502.bin", "SCPH5501.BIN", "SCPH1001.BIN"))
+    return {"nome": nome, "nucleo": nucleo, "desempenho": desemp, "dica": dica, "pronto": bool(nucleo_ok), "bios": bios}
+
+
+def _arq_fav(u: str) -> Path:
+    return RAIZ / "dados" / f"jogos_fav_{re.sub(r'[^a-z0-9_-]', '', u.lower())}.json"
+
+
+def _ler_favoritos(u: str) -> list:
+    try:
+        return json.loads(_arq_fav(u).read_text(encoding="utf-8-sig"))
+    except Exception:
+        return []
+
+
+@app.post("/api/jogos/favorito")
+async def jogos_favorito(request: Request):
+    u = exigir_login(request)
+    c = await request.json()
+    pasta, arq = str(c.get("pasta", "")), str(c.get("arquivo", ""))
+    _arquivo_jogo(pasta, arq)
+    favs = _ler_favoritos(u)
+    chave = f"{pasta}/{arq}"
+    marcar = bool(c.get("fav", chave not in favs))
+    favs = [x for x in favs if x != chave] + ([chave] if marcar else [])
+    _arq_fav(u).write_text(json.dumps(favs, ensure_ascii=False), encoding="utf-8")
+    return {"ok": True, "fav": marcar}
+
+
+def _chave_titulo(n: str) -> str:
+    n = re.sub(r"[\[\(].*?[\]\)]", " ", n).lower()
+    m = re.match(r"^(.*?),\s*(the|a|an)\b(.*)$", n)          # "Legend of Zelda, The - X" -> "the legend of zelda - x"
+    if m:
+        n = f"{m.group(2)} {m.group(1)}{m.group(3)}"
+    n = n.replace("&", " and ")
+    return re.sub(r"[^a-z0-9]+", "", n)
+
+
+def _lista_capas(pasta: str) -> dict:
+    """Lista pública de capas (libretro-thumbnails) do console, guardada 30 dias: {chave_titulo: [nomes de arquivo]}."""
+    import urllib.request, urllib.parse, html as _html
+    cache = CAPAS_DIR / f"_lista_{_slug(pasta)}.json"
+    if cache.exists() and time.time() - cache.stat().st_mtime < 30 * 86400:
+        try:
+            return json.loads(cache.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    url = "https://thumbnails.libretro.com/" + urllib.parse.quote(EMULADORES[pasta][3]) + "/Named_Boxarts/"
+    try:
+        pag = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "AliciaServer"}), timeout=40).read().decode("utf-8", "ignore")
+    except Exception:
+        return json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else {}
+    out = {}
+    for h_ in re.findall(r'href="([^"]+\.png)"', pag):
+        nome = _html.unescape(urllib.parse.unquote(h_))
+        out.setdefault(_chave_titulo(nome[:-4]), []).append(nome)
+    cache.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+    return out
+
+
+def _melhor_capa(nomes: list) -> str:
+    def nota(n):
+        return (0 if "(USA" in n else 1 if "(World" in n else 2 if "(Europe" in n else 3, len(n))
+    return sorted(nomes, key=nota)[0]
+
+
+def _buscar_capa(pasta: str, arquivo: str) -> Path | None:
+    import difflib, urllib.request, urllib.parse
+    destino = CAPAS_DIR / pasta / (Path(arquivo).stem + ".png")
+    if destino.exists():
+        return destino
+    falha = CAPAS_DIR / pasta / (Path(arquivo).stem + ".sem")
+    if falha.exists() and time.time() - falha.stat().st_mtime < 7 * 86400:
+        return None
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    lista = _lista_capas(pasta)
+    chave = _chave_titulo(Path(arquivo).stem)
+    achado = lista.get(chave)
+    if not achado and chave and lista:
+        perto = difflib.get_close_matches(chave, list(lista), n=1, cutoff=0.9)
+        achado = lista.get(perto[0]) if perto else None
+    if achado:
+        url = "https://thumbnails.libretro.com/" + urllib.parse.quote(EMULADORES[pasta][3]) + "/Named_Boxarts/" + urllib.parse.quote(_melhor_capa(achado))
+        try:
+            dados = urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "AliciaServer"}), timeout=30).read()
+            if len(dados) > 500:
+                destino.write_bytes(dados)
+                return destino
+        except Exception:
+            pass
+    if lista:                                   # só marca como "sem capa" se a lista chegou; sem internet tenta de novo depois
+        falha.write_text("sem capa", encoding="utf-8")
+    return None
+
+
+_sem_capas = __import__("threading").BoundedSemaphore(3)
+
+
+@app.get("/api/jogos/imagem")
+async def jogos_imagem(request: Request, pasta: str, arquivo: str):
+    """Capa do jogo: a que você enviou (mesmo nome) ou a oficial da caixa, buscada uma vez e guardada no servidor."""
+    exigir_login(request)
+    jogo = _arquivo_jogo(pasta, arquivo)
+    for e in (".png", ".jpg", ".jpeg"):
+        if jogo.with_suffix(e).exists():
+            return FileResponse(jogo.with_suffix(e), headers={"Cache-Control": "max-age=86400"})
+
+    def _faz():
+        with _sem_capas:
+            return _buscar_capa(pasta, arquivo)
+    p = await asyncio.to_thread(_faz)
+    if not p:
+        raise HTTPException(404, "Sem capa.")
+    return FileResponse(p, headers={"Cache-Control": "max-age=604800"})
 
 @app.get("/jogar")
 async def jogar_pagina(request: Request):

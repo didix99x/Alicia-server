@@ -72,6 +72,9 @@ Retrô **no navegador**, **sem instalar nada e sem login**, como num serviço de
 - **Progresso salvo no servidor** (continua de onde parou, em qualquer aparelho).
 - **Jogo por cima do painel:** a música não para.
 - **Emulação no seu aparelho:** o notebook não faz esforço.
+- **⭐ Favoritos:** toque na estrela de um jogo; seus favoritos ficam numa faixa no topo e num filtro (cada usuário tem os seus).
+- **Capas:** cada jogo mostra a **capa oficial da caixa**, buscada sozinha na primeira vez e guardada no servidor. Sem capa disponível, aparece um bloco colorido com as iniciais. Para usar uma capa sua, envie uma imagem com o mesmo nome do jogo.
+- **Painel de emuladores:** um cartão por console com o emulador, se está pronto, o peso (leve, médio, pesado) e a situação da BIOS do PlayStation. Clique para filtrar por console.
 - **Controle** por teclado, toque na tela ou controle físico.
 
 Limites: Nintendo 64 e PlayStation exigem aparelho mais forte. Os jogos e BIOS **não vêm no repositório**; você coloca os seus. Veja [JOGOS.md](JOGOS.md).
