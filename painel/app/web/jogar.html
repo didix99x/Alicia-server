@@ -13,9 +13,10 @@ html,body{margin:0;height:100%;background:#000;color:#e9ecf5;font-family:system-
 #aviso{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:20px;background:#0f1117;z-index:60}
 </style></head>
 <body>
-<div id="topo"><a href="/" id="voltar" tabindex="0">⬅ Voltar aos jogos</a><span id="msg"></span><span id="sala" title="Toque para copiar o link da sala"></span></div>
+<div id="topo"><a href="/" id="voltar" tabindex="0">⬅ Voltar aos jogos</a><button id="ctl" type="button" tabindex="0" style="background:#1a1d27cc;color:#e9ecf5;padding:10px 16px;border-radius:12px;border:0;font-size:16px;cursor:pointer">🎮 Controle</button><span id="msg"></span><span id="sala" title="Toque para copiar o link da sala"></span></div>
 <div id="aviso"><div id="avisoTxt"></div></div>
 <div id="game"></div>
+<script src="/static/controle.js"></script>
 <script>
 // Emulador rodando NO NAVEGADOR deste aparelho (EmulatorJS). O servidor só entrega o jogo e guarda o save.
 const q = new URLSearchParams(location.search), pasta = q.get('c'), arquivo = q.get('a'), MULTI = q.get('m') === '1';
@@ -67,7 +68,12 @@ function erro(t){ $('#aviso').style.display='grid'; $('#avisoTxt').innerHTML = t
         return r;
       };
     }
-    window.EJS_onGameStart = () => { setInterval(salvar, 120000); if (MULTI) setTimeout(iniciarSala, 1500); };
+    window.EJS_onGameStart = () => {
+      setInterval(salvar, 120000); if (MULTI) setTimeout(iniciarSala, 1500);
+      try { window.EJS_emulator.gamepad.listeners = {}; } catch (e) {}          // a leitura de controle do emulador erra em vários modelos: usamos a nossa (controle.js)
+      AliciaPad.iniciar({ console: pasta, maxJogadores: MULTI ? 1 : 4, botao: $('#ctl'),
+        enviar: (j, i, v) => { const gm = window.EJS_emulator && window.EJS_emulator.gameManager; if (gm) gm.simulateInput(j, i, v); } });
+    };
     window.EJS_onSaveState = () => salvar();
     document.addEventListener('visibilitychange', () => { if (document.hidden) salvar(); });
     // Dentro do painel (camada sobre a página), "Voltar" só fecha o jogo e a música continua; fora dele, volta para o início.

@@ -20,8 +20,9 @@ video{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;backgroun
 <body>
 <video id="v" autoplay playsinline></video>
 <div id="pad"></div>
-<div id="topo"><button id="voltar">⬅ Sair da sala</button><button id="tela" style="display:none">🎮 Controles na tela</button><span id="msg"></span></div>
+<div id="topo"><button id="voltar">⬅ Sair da sala</button><button id="ctl">🎮 Controle</button><button id="tela" style="display:none">🎮 Controles na tela</button><span id="msg"></span></div>
 <div id="cobre"><div><div id="cobreTxt">Conectando à sala…</div><button id="ir" style="display:none">▶ Entrar no jogo</button></div></div>
+<script src="/static/controle.js"></script>
 <script>
 // Jogar junto: este aparelho só recebe a tela do anfitrião e manda os controles. O jogo roda no aparelho dele.
 const $ = s => document.querySelector(s), q = new URLSearchParams(location.search), sala = (q.get('sala') || '').toUpperCase();
@@ -41,7 +42,7 @@ function conecta() {
   ws.onmessage = async ev => {
     const m = JSON.parse(ev.data);
     if (m.t === 'erro' || m.t === 'fim') { pronto = false; aviso(m.msg + '<br><br><button onclick="sair()">Sair</button>'); }
-    else if (m.t === 'ok') { slot = m.slot; pasta = m.pasta; montaControles(); aviso('Entrando no jogo <b>' + m.nome + '</b> de ' + m.host + '…<br><small>Você é o jogador ' + (slot + 1) + '</small>'); }
+    else if (m.t === 'ok') { slot = m.slot; pasta = m.pasta; montaControles(); AliciaPad.iniciar({ console: pasta, maxJogadores: 1, botao: $('#ctl'), enviar: (j, i, v) => enviar(i, v) }); aviso('Entrando no jogo <b>' + m.nome + '</b> de ' + m.host + '…<br><small>Você é o jogador ' + (slot + 1) + '</small>'); }
     else if (m.t === 'sinal') {
       if (m.d.sdp) {
         pc = pc || novoPar();
@@ -66,20 +67,7 @@ $('#ir').onclick = () => { $('#cobre').style.display = 'none'; video.muted = fal
 const TECLAS = { x: 0, s: 1, v: 2, enter: 3, arrowup: 4, arrowdown: 5, arrowleft: 6, arrowright: 7, z: 8, a: 9, q: 10, e: 11, tab: 12, r: 13 };
 addEventListener('keydown', e => { const i = TECLAS[e.key.toLowerCase()]; if (i !== undefined) { e.preventDefault(); enviar(i, 1); } });
 addEventListener('keyup', e => { const i = TECLAS[e.key.toLowerCase()]; if (i !== undefined) { e.preventDefault(); enviar(i, 0); } });
-// ---- controle físico ----
-const PAD = { 0: 8, 1: 0, 2: 9, 3: 1, 4: 10, 5: 11, 6: 12, 7: 13, 8: 2, 9: 3, 10: 14, 11: 15, 12: 4, 13: 5, 14: 6, 15: 7 };
-function lePad() {
-  for (const g of (navigator.getGamepads ? navigator.getGamepads() : [])) {
-    if (!g) continue;
-    g.buttons.forEach((b, k) => { if (PAD[k] !== undefined) enviar(PAD[k], b.pressed ? 1 : 0); });
-    const eixo = (n, mais, menos) => { const v = Math.abs(g.axes[n] || 0) > .25 ? g.axes[n] : 0; enviar(mais, v > 0 ? Math.round(v * 32767) : 0); enviar(menos, v < 0 ? Math.round(-v * 32767) : 0); };
-    eixo(0, 16, 17); eixo(1, 18, 19); eixo(2, 20, 21); eixo(3, 22, 23);
-    break;
-  }
-  requestAnimationFrame(lePad);
-}
-requestAnimationFrame(lePad);
-
+// ---- controle físico: leitura própria com mapa por posição e configuração guiada (controle.js) ----
 // ---- controles na tela (celular/tablet) ----
 function montaControles() {
   const area = $('#pad'); area.textContent = '';

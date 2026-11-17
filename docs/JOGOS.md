@@ -58,3 +58,15 @@ Quantos jogadores: Nintendo 2, Super Nintendo 2, Nintendo 64 até 4, PlayStation
 - o desempenho depende do aparelho do anfitrião: prefira notebook, PC ou um celular forte;
 - o painel **não sabe quais jogos têm modo para dois jogadores**. O botão 👥 aparece em todos os jogos desses consoles. Se o jogo for só de um jogador, o segundo controle simplesmente não faz nada;
 - o progresso salvo é o do anfitrião.
+## Controles (gamepad)
+
+O jogo usa uma leitura de controle própria (`painel/app/web/controle.js`), porque a do emulador supõe um layout fixo e erra em vários modelos. O que ela faz:
+
+- **Mapa por posição:** o botão de **baixo** do controle é o **B**, o da **direita** é o **A**, o da esquerda é o **Y** e o de cima é o **X**. Assim, em Xbox, PlayStation e Switch Pro, "pular" fica onde você espera.
+- **Direcional de qualquer tipo:** funciona como botões, como eixo ou como "hat" (comum em controles genéricos de USB). O **analógico esquerdo também vale como direcional**; no Nintendo 64 e no PlayStation analógico ele é analógico de verdade.
+- **Jogador automático:** cada controle ligado vira o jogador 1, 2, 3… na ordem em que é usado (dá para jogar a dois no mesmo aparelho). Se desconectar, tudo é solto.
+- **Controle fora do padrão?** Quando o navegador não reconhece o layout, aparece sozinho um **assistente**: ele pede um botão de cada vez ("Aperte: B", "Aperte: A"…), com "Pular" para o que o controle não tem. A configuração fica **salva por modelo de controle** naquele aparelho.
+- **Botão "🎮 Controle"** no topo do jogo: lista os controles, mostra ao vivo qual botão está sendo apertado (para testar), refaz a configuração (**⚙ Configurar botões**) ou volta ao padrão.
+- No multiplayer, o convidado usa o mesmo sistema no aparelho dele.
+
+Se um botão específico não responde: abra "🎮 Controle", aperte o botão e veja se aparece (`B3`, `E9+`…). Se aparecer, refaça a configuração; se não aparecer, o navegador não está enxergando esse botão (tente conectar por cabo ou em outro modo do controle).

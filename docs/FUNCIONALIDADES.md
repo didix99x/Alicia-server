@@ -76,7 +76,7 @@ Retrô **no navegador**, **sem instalar nada e sem login**, como num serviço de
 - **Capas:** cada jogo mostra a **capa oficial da caixa**, buscada sozinha na primeira vez e guardada no servidor. Sem capa disponível, aparece um bloco colorido com as iniciais. Para usar uma capa sua, envie uma imagem com o mesmo nome do jogo.
 - **Painel de emuladores:** um cartão por console com o emulador, se está pronto, o peso (leve, médio, pesado) e a situação da BIOS do PlayStation. Clique para filtrar por console.
 - **👥 Multiplayer:** toque no 👥 de um jogo (Nintendo, Super Nintendo, Nintendo 64 ou PlayStation) para abrir uma sala; os amigos entram pela lista **Jogar junto** ou pelo código de 4 letras e jogam como jogador 2, 3 ou 4, cada um no seu aparelho, com imagem, som e botões na tela no celular. O jogo roda no aparelho de quem abriu a sala. Veja [JOGOS.md](JOGOS.md).
-- **Controle** por teclado, toque na tela ou controle físico.
+- **Controle** por teclado, toque na tela ou controle físico, com **leitura própria de gamepad**: botões por posição (baixo = B, direita = A), direcional como botão, eixo ou "hat", analógico também como direcional, jogador 1, 2, 3… automático e um **assistente de configuração** para controles genéricos (salvo por modelo). Botão **🎮 Controle** no jogo testa e reconfigura. Veja [JOGOS.md](JOGOS.md).
 
 Limites: Nintendo 64 e PlayStation exigem aparelho mais forte. Os jogos e BIOS **não vêm no repositório**; você coloca os seus. Veja [JOGOS.md](JOGOS.md).
 
