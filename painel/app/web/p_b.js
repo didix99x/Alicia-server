@@ -94,6 +94,16 @@ function painelEmuladores() {
 async function jogosPinta(recarrega) {
   if (recarrega || !JG.dados.length) { try { JG.dados = await api('/api/jogos'); CJOGOS = JG.dados; CJ_T = Date.now(); } catch (e) { return; } }
   const L = $('#jgLista'); if (!L) return; L.textContent = ''; const q = JG.q.toLowerCase(); let total = 0;
+  clearTimeout(JG.t); const conv = JG.dados.map(c => c.convertendo).find(Boolean); if (conv) JG.t = setTimeout(() => { if (atual === 'jogos') jogosPinta(true); }, 15000);
+  if (conv) L.append(h('div', { class: 'box', style: 'border-left:0.25rem solid var(--warn)' }, '⏳ Preparando o jogo "' + conv + '" (descompactando o .rar). Pode levar alguns minutos; ele aparece aqui sozinho quando terminar.'));
+  JG.dados.forEach(c => (c.pede_senha || []).forEach(x => {
+    const campo = h('input', { type: 'password', placeholder: 'Senha do arquivo', style: 'min-width:14rem', autocomplete: 'off' });
+    const enviar = async () => { if (!campo.value) return; try { await api('/api/jogos/senha', { method: 'POST', body: JSON.stringify({ pasta: x.pasta, arquivo: x.arquivo, senha: campo.value }) }); toast('Senha enviada, descompactando…', 'ok'); setTimeout(() => jogosPinta(true), 1500); } catch (e) {} };
+    campo.onkeydown = e => { if (e.key === 'Enter') enviar(); };
+    L.append(h('div', { class: 'box', style: 'border-left:0.25rem solid var(--warn)' }, h('b', null, '🔒 "' + x.nome + '" está protegido por senha'),
+      h('p', { class: 'mut peq' }, (x.errada ? 'A senha anterior não funcionou. ' : '') + 'Quem preparou o arquivo costuma deixar a senha no site de onde você baixou. A senha só é usada para descompactar e não fica guardada.'),
+      h('div', { class: 'lin' }, campo, h('button', { class: 'btn', onclick: enviar }, 'Descompactar'))));
+  }));
   const E = $('#jgEmus'); if (E) { E.textContent = ''; E.append(painelEmuladores()); }
   const chips = $('#jgChips'); if (chips) {
     chips.textContent = ''; const nf = JG.dados.reduce((n, c) => n + c.jogos.filter(j => j.fav).length, 0);

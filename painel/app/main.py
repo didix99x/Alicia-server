@@ -673,10 +673,92 @@ def _organizar_jogos():
                     registrar("JOGOS", "-", "-", f"'{f.name}' era de {c} e foi movido de {pasta} para {c}", "ok", "info")
 
 
+_conv_ativa = {"rodando": False, "atual": "", "senha": []}
+_senhas_rar = {}       # nome do .rar -> senha digitada pelo dono (só na memória; nunca vai para disco nem para o log)
+EXT_ROM = {".cue", ".bin", ".iso", ".img", ".chd", ".pbp", ".sfc", ".smc", ".nes", ".gba", ".gb", ".gbc", ".z64", ".n64", ".v64", ".fds"}
+SETE_ZIP = Path(r"C:\Program Files\7-Zip\7z.exe")
+
+
+def _extrair(rar: Path, destino: Path):
+    """Descompacta com o 7-Zip (lê .rar com ou sem senha); sem ele, tenta o tar do Windows. Retorna (ok, precisa_senha)."""
+    import subprocess
+    if SETE_ZIP.exists():
+        senha = _senhas_rar.get(rar.name, "")
+        r = subprocess.run([str(SETE_ZIP), "x", "-y", f"-p{senha}", f"-o{destino}", str(rar)], capture_output=True, timeout=3600, stdin=subprocess.DEVNULL)
+        saida = (r.stdout + r.stderr).decode("utf-8", "ignore").lower()
+        return r.returncode == 0, ("password" in saida or "wrong" in saida) and r.returncode != 0
+    r = subprocess.run(["tar", "-xf", str(rar), "-C", str(destino)], capture_output=True, timeout=3600)
+    return r.returncode == 0, False
+
+
+def _converter_rars():
+    """Jogos enviados em .rar (muito comum no PS1: pasta com .bin + .cue) viram um .zip simples que o emulador entende.
+    O .rar original vai para Jogos/Originais_rar (pode apagar depois para liberar espaço). .rar com senha esperam a senha no painel."""
+    if _conv_ativa["rodando"]:
+        return
+    _conv_ativa["rodando"] = True
+    try:
+        import tempfile, zipfile
+        for pasta in list(CONSOLES):
+            for rar in sorted((JOGOS_DIR / pasta).glob("*.rar")):
+                if any(x["arquivo"] == rar.name for x in _conv_ativa["senha"]) and rar.name not in _senhas_rar:
+                    continue                                   # já sabemos que pede senha e ela ainda não foi informada
+                _conv_ativa["senha"] = [x for x in _conv_ativa["senha"] if x["arquivo"] != rar.name]
+                nome = re.sub(r"\s+", " ", rar.stem.replace("_", " ")).strip() or rar.stem
+                _conv_ativa["atual"] = nome
+                alvo = JOGOS_DIR / pasta / f"{nome}.zip"
+                tmp = Path(tempfile.mkdtemp(prefix="conv_", dir=JOGOS_DIR))
+                try:
+                    ok, pede_senha = _extrair(rar, tmp)
+                    if pede_senha:
+                        _conv_ativa["senha"].append({"pasta": pasta, "arquivo": rar.name, "nome": nome, "errada": rar.name in _senhas_rar})
+                        _senhas_rar.pop(rar.name, None)
+                        continue
+                    achados = [p for p in tmp.rglob("*") if p.is_file() and p.suffix.lower() in EXT_ROM]
+                    if not ok or not achados:
+                        registrar("JOGOS", "-", "-", f"não consegui abrir '{rar.name}' (precisa ter .bin/.cue ou o arquivo do jogo dentro)", "erro", "erro")
+                        rar.rename(rar.with_suffix(".rar.erro"))
+                        continue
+                    cue = next((p for p in achados if p.suffix.lower() == ".cue"), achados[0])
+                    grupo = [p for p in achados if p.parent == cue.parent]       # só o jogo (ignora outras pastas, ex. versão original/dublada)
+                    parcial = alvo.with_suffix(".parcial")
+                    with zipfile.ZipFile(parcial, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
+                        for p in grupo:
+                            z.write(p, p.name)
+                    parcial.replace(alvo)
+                    (JOGOS_DIR / "Originais_rar").mkdir(exist_ok=True)
+                    rar.replace(JOGOS_DIR / "Originais_rar" / rar.name)
+                    _senhas_rar.pop(rar.name, None)
+                    registrar("JOGOS", "-", "-", f"converteu '{rar.name}' em '{alvo.name}' ({len(grupo)} arquivos)", "ok", "ok")
+                except Exception as e:
+                    registrar("JOGOS", "-", "-", f"erro ao converter '{rar.name}': {str(e)[:80]}", "erro", "erro")
+                finally:
+                    shutil.rmtree(tmp, ignore_errors=True)
+    finally:
+        _conv_ativa["rodando"] = False
+        _conv_ativa["atual"] = ""
+
+
+@app.post("/api/jogos/senha")
+async def jogos_senha(request: Request):
+    """Senha de um .rar protegido; usada só para descompactar (guardada só na memória)."""
+    u = exigir_login(request)
+    c = await request.json()
+    pasta, arq = str(c.get("pasta", "")), str(c.get("arquivo", ""))
+    if pasta not in CONSOLES or "/" in arq or "\\" in arq or not (JOGOS_DIR / pasta / arq).is_file():
+        raise HTTPException(404, "Arquivo não encontrado.")
+    _senhas_rar[arq] = str(c.get("senha", ""))[:200]
+    registrar("JOGOS", u, ip_de(request), f"informou a senha do arquivo '{arq}' (a senha não é guardada)", "ok", "info")
+    if not _conv_ativa["rodando"]:
+        __import__("threading").Thread(target=_converter_rars, daemon=True).start()
+    return {"ok": True}
+
 @app.get("/api/jogos")
 async def jogos_lista(request: Request):
     exigir_login(request)
     await asyncio.to_thread(_organizar_jogos)
+    if not _conv_ativa["rodando"] and any(r.name not in {x["arquivo"] for x in _conv_ativa["senha"]} or r.name in _senhas_rar for c in CONSOLES for r in (JOGOS_DIR / c).glob("*.rar")):
+        __import__("threading").Thread(target=_converter_rars, daemon=True).start()
     favs = set(_ler_favoritos(exigir_login(request)))
     out = []
     for pasta, (nucleo, nome, cor, exts) in CONSOLES.items():
@@ -687,7 +769,7 @@ async def jogos_lista(request: Request):
                 itens.append({"arquivo": f.name, "nome": _nome_bonito(f), "capa": capa})
         for it in itens:
             it["fav"] = f"{pasta}/{it['arquivo']}" in favs
-        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens, "emulador": _info_emulador(pasta, nucleo)})
+        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens, "emulador": _info_emulador(pasta, nucleo), "convertendo": _conv_ativa["atual"] if _conv_ativa["rodando"] else "", "pede_senha": [x for x in _conv_ativa["senha"] if x["pasta"] == pasta]})
     return out
 
 def _arquivo_jogo(pasta: str, arquivo: str) -> Path:

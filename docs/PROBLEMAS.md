@@ -22,3 +22,6 @@
 - **Ninguém consegue entrar (erro 500 no login):** o arquivo `painel/usuarios.json` pode ter ficado com um caractere invisível no começo se foi editado no Bloco de Notas/PowerShell. O painel já tolera isso; se persistir, recrie o usuário com `painel\.venv\Scripts\python.exe scripts\criar_usuario.py SEU_NOME --admin`.
 - **Visitante não consegue entrar:** o administrador pode ter desligado em Configurações → Entrada de visitante.
 - **Esqueci a senha do administrador:** rode `painel\.venv\Scripts\python.exe scripts\criar_usuario.py SEU_NOME NOVA_SENHA --admin` no notebook.
+## Só alguns jogos de PlayStation aparecem
+
+Jogos em .rar são convertidos sozinhos ao abrir a aba Jogos. Se algum não aparecer, veja se há um aviso de **senha** na aba (digite a senha) ou se o arquivo ficou como .rar.erro (estava corrompido ou sem .bin/.cue dentro). Veja [JOGOS.md](JOGOS.md).
