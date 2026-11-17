@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0f15">
+<title>Alicia Server</title>
+<link rel="stylesheet" href="/static/app.css?v=__V__">
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- entrada -->
+<div id="login" style="display:none;min-height:100vh;place-items:center;padding:20px">
+  <div class="box" style="width:min(380px,100%);margin:0;padding:30px">
+    <div class="logo" style="margin:0 0 20px"><i></i>Alicia Server</div>
+    <p class="mut" style="margin:0 0 14px">Entre para usar o seu servidor.</p>
+    <input type="text" id="lgU" placeholder="Usuário" autocomplete="username" style="margin-bottom:10px">
+    <input type="password" id="lgS" placeholder="Senha" autocomplete="current-password" style="margin-bottom:14px">
+    <button class="btn" id="lgEntrar" style="width:100%">Entrar</button>
+    <div id="lgVis" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid var(--card2);text-align:center">
+      <button class="btn sec" id="lgVisitante" style="width:100%">👤 Entrar como visitante</button>
+      <p class="mut peq" style="margin:8px 0 0">Sem senha. Jogos, música, filmes e RPG. Arquivos e configurações ficam só para os moradores.</p>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <nav id="nav"></nav>
+  <div class="corpo">
+    <header class="topo">
+      <div id="busca"><input type="text" id="buscaIn" placeholder="Buscar páginas, jogos e músicas   ( / )" autocomplete="off"><div id="resBusca"></div></div>
+      <span class="sp"></span>
+      <button class="btn-ic" id="btTV" title="Modo TV (letras grandes e navegação pelas setas)">📺</button>
+      <button class="btn-ic" id="btTour" title="Ver o tour de novo">❓</button>
+      <div class="eu" title="Usuário"><i id="euI">?</i><span id="euN"></span></div>
+      <button class="btn-ic" id="btSair" title="Sair">⏻</button>
+    </header>
+    <main id="main">
+      <section id="p-inicio" class="sec"></section>
+      <section id="p-alicia" class="sec"></section>
+      <section id="p-arquivos" class="sec"></section>
+      <section id="p-filmes" class="sec"></section>
+      <section id="p-jogos" class="sec"></section>
+      <section id="p-musica" class="sec"></section>
+      <section id="p-rpg" class="sec"></section>
+      <section id="p-servidor" class="sec"></section>
+      <section id="p-registros" class="sec"></section>
+      <section id="p-config" class="sec"></section>
+    </main>
+  </div>
+</div>
+
+<div id="maisMenu"></div>
+<div id="jogoOverlay"><iframe id="jogoFrame" allow="autoplay; gamepad; fullscreen" allowfullscreen></iframe></div>
+
+<!-- player de música: fica por cima de tudo e continua tocando enquanto você navega ou joga -->
+<div id="barra">
+  <div id="bInfo"><img id="bCapa" alt=""><div><b id="bTit">—</b><span id="bCanal"></span></div></div>
+  <div id="bCtl"><button id="bPrev" title="Anterior">⏮</button><button id="bPlay" title="Tocar/Pausar">▶</button><button id="bNext" title="Próxima">⏭</button><button id="bLike" title="Curtir">🤍</button><button id="bFechar" title="Fechar o player (para a música)">✕</button></div>
+  <div id="bProg"><span id="bT0">0:00</span><input type="range" id="bSeek" min="0" max="1000" value="0"><span id="bT1">0:00</span></div>
+  <div id="bVol">🔊<input type="range" id="bVolR" min="0" max="100" value="70"></div>
+  <audio id="aud" preload="auto"></audio>
+</div>
+
+<div id="modal"></div>
+<script src="/static/app.js?v=__V__"></script>
+<script src="/static/p_a.js?v=__V__"></script>
+<script src="/static/p_b.js?v=__V__"></script>
+</body>
+</html>
