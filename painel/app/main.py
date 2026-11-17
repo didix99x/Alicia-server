@@ -1,4 +1,4 @@
-﻿"""Alicia Server — painel web (FastAPI).
+"""Alicia Server — painel web (FastAPI).
 
 Login, status real do servidor, arquivos, chave da NVIDIA e monitor de acessos.
 Nunca registramos senhas, chaves nem conteúdo de arquivos.
@@ -836,6 +836,78 @@ async def alicia_opcoes(request: Request):
     return {"personalidades": alicia_ponte.personalidades()}
 
 
+# ----- A Alicia analisa o servidor: ela recebe os DADOS REAIS medidos pelo painel (só leitura) -----
+_saude_cache = {"t": 0, "v": None}
+_PERGUNTA_SERVIDOR = re.compile(r"\b(servidor|notebook|disco|hd|memoria|ram|cpu|processador|temperatura|lent[oa]|travand\w*|travou|acesso\w*|registro\w*|logs?|seguranca|invasa\w*|erros?|problemas?|saude|status|analis\w*|diagnostic\w*|backup|espaco|servicos?|uptime|desempenho|consumo|esta tudo bem|ta tudo bem|tudo certo)\b")
+
+
+def _resumo_logs():
+    """Resumo das últimas 24 h do monitor: contagens e os eventos que merecem atenção."""
+    f = LOG_DIR / "acessos.log"
+    if not f.exists():
+        return None, []
+    ev = []
+    agora = time.time()
+    for l in f.read_text(encoding="utf-8-sig", errors="ignore").splitlines()[-4000:]:
+        try:
+            e = json.loads(l)
+        except ValueError:
+            continue
+        if agora - e.get("ts", 0) < 86400:
+            ev.append(e)
+    c = {"pedidos": sum(1 for e in ev if e["servico"] == "PAINEL"),
+         "logins_ok": sum(1 for e in ev if e["servico"] == "LOGIN" and e["resultado"] == "ok"),
+         "senhas_erradas": sum(1 for e in ev if e["servico"] == "LOGIN" and e["resultado"] in ("falhou", "bloqueado")),
+         "visitantes": sum(1 for e in ev if "visitante" in e["o_que"] and e["servico"] == "LOGIN"),
+         "erros": sum(1 for e in ev if e["tipo"] == "erro" and "favicon" not in e["o_que"]),
+         "seguranca": sum(1 for e in ev if e["tipo"] == "seguranca")}
+    notaveis = [e for e in ev if e["tipo"] in ("seguranca", "erro", "aviso") and "favicon" not in e["o_que"]][-6:]
+    return c, notaveis
+
+
+def contexto_servidor(detalhado: bool) -> str:
+    disco = shutil.disk_usage(DADOS)
+    vm = psutil.virtual_memory()
+    L = ["[ESTADO REAL DO SERVIDOR AGORA — dados medidos pelo painel neste instante; ao falar do servidor use SÓ isto]",
+         f"Hora: {time.strftime('%d/%m/%Y %H:%M')} · ligado há {round((time.time() - psutil.boot_time()) / 3600, 1)} h",
+         f"Processador: {psutil.cpu_percent(interval=None)}% · Memória: {vm.percent}% ({vm.used / 1e9:.1f} de {vm.total / 1e9:.1f} GB) · "
+         f"Disco: {disco.used / disco.total * 100:.1f}% usado ({disco.free / 1e9:.0f} GB livres de {disco.total / 1e9:.0f} GB)",
+         "Serviços: " + "; ".join(f"{s['nome']} {s['estado']}" for s in servicos()),
+         "Chave da NVIDIA: " + ("colocada" if ler_env().get("NVIDIA_API_KEY") else "AINDA NÃO colocada")]
+    if not detalhado:
+        return "\n".join(L)
+    por_nome = {}
+    for pr in psutil.process_iter(["name", "memory_info"]):
+        try:
+            por_nome[pr.info["name"]] = por_nome.get(pr.info["name"], 0) + pr.info["memory_info"].rss
+        except Exception:
+            pass
+    top = sorted(por_nome.items(), key=lambda x: -x[1])[:5]
+    L.append("Programas que mais usam memória: " + ", ".join(f"{n} {b / 1e6:.0f} MB" for n, b in top))
+    if time.time() - _saude_cache["t"] > 600:
+        _saude_cache.update(t=time.time(), v=saude_disco())
+    L.append(f"Saúde do HD (SMART do Windows): {_saude_cache['v'] or 'não consegui ler'} · Temperatura: o Windows não informa neste notebook")
+    try:
+        idx = _indice()
+        jogos = {c: sum(1 for x in (JOGOS_DIR / c).iterdir() if x.suffix.lower() in CONSOLES[c][3]) for c in CONSOLES}
+        L.append(f"Biblioteca: {len(idx)} músicas guardadas · jogos: " + ", ".join(f"{c} {n}" for c, n in jogos.items() if n) )
+    except Exception:
+        pass
+    bk = Path(os.environ.get("ALICIA_BACKUP", r"C:\AliciaServer\Backup")) / "configuracao"
+    if bk.exists():
+        h = (time.time() - bk.stat().st_mtime) / 3600
+        L.append(f"Último backup: há {h:.0f} h (o backup fica no mesmo HD do servidor)")
+    else:
+        L.append("Último backup: nenhum encontrado")
+    c, notaveis = _resumo_logs()
+    if c:
+        L.append(f"Últimas 24 h: {c['pedidos']} pedidos ao painel · {c['logins_ok']} logins · {c['senhas_erradas']} senhas erradas/bloqueios · "
+                 f"{c['visitantes']} entradas de visitante · {c['erros']} erros · {c['seguranca']} eventos de segurança")
+        for e in notaveis:
+            L.append(f"  - {e['t']} {e['servico']} {e['quem']} ({e['ip']}): {e['o_que']} → {e['resultado']}")
+    L.append("Análise: diga o que está bom, o que preocupa e o que fazer, com os números acima. Você só LÊ estes dados; não altera nada sozinha.")
+    return "\n".join(L)
+
 @app.post("/api/alicia/conversar")
 async def alicia_conversar(request: Request):
     u = exigir_login(request)
@@ -850,6 +922,8 @@ async def alicia_conversar(request: Request):
                 "expressao": "pensando"}
     sistema = alicia_ponte.montar_sistema(u.capitalize(), str(corpo.get("personalidade", "normal")),
                                           bool(corpo.get("sem_filtro")), texto)
+    detalhado = bool(_PERGUNTA_SERVIDOR.search(_norm(texto)))      # pergunta sobre o servidor: manda o estado completo
+    sistema += "\n\n" + await asyncio.to_thread(contexto_servidor, detalhado)
     t0 = time.time()
     ok, resp = await asyncio.to_thread(alicia_ponte.perguntar_hermes, env, f"painel-{u}", sistema, texto)
     # Registro: só metadados, nunca o conteúdo da conversa.
@@ -869,26 +943,37 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", "".join(c for c in _ud.normalize("NFD", (s or "").lower()) if _ud.category(c) != "Mn")).strip()
 
 
-_VERBOS = r"(?:toca|toque|tocar|coloca|coloque|colocar|poe|bota|bote|quero ouvir|quero escutar|vou querer ouvir|ouvir|escutar|reproduz|reproduza|manda|mande)"
+_VERBOS = r"(?P<verbo>toca|toque|tocar|ponha|coloca|coloque|colocar|poe|bota|bote|botar|ouvir|escutar|reproduz|reproduza|reproduzir|manda|mande)"
+_PREFIXOS = (r"(?:oi|ei|ola|alicia|por favor|pf|pode|poderia|podia|tem como|quero que|queria que|gostaria que|gostaria de|queria|quero|"
+             r"eu quero|vou querer|vamos|bora|agora|entao|ai|e|voce|me|a gente)")
 _PARADAS = {"pra", "para", "mim", "por", "favor", "ai", "agora", "uma", "um", "a", "o", "as", "os", "musica", "musicas", "som", "faixa", "cancao",
-            "aquela", "essa", "esse", "de", "da", "do", "das", "dos", "eu", "ouvir", "tocar", "escutar", "me", "pro", "pra"}
+            "aquela", "essa", "esse", "de", "da", "do", "das", "dos", "eu", "ouvir", "tocar", "escutar", "me", "pro", "pra", "tocando", "tocar"}
 _GENERICO = {"", "algo", "alguma", "alguma coisa", "qualquer", "qualquer coisa", "qualquer uma", "algo bom", "algo animado", "alguma musica"}
+_MODAL = re.compile(r"\b(pode|poderia|podia|tem como|que tal|queria|gostaria)\b")
 
 
 def extrair_consulta(texto: str):
     """Se a mensagem é um pedido de música, devolve o que foi pedido ('' = qualquer coisa). Senão, None."""
-    n = re.sub(r"^(?:oi |ei |ola )?alicia[, ]*", "", _norm(texto)).strip(" ,.!?")
-    m = re.match(rf"^(?:por favor[, ]*|pode |poderia |voce pode |me )*{_VERBOS}\b(.*)$", n)
+    n = _norm(texto).strip(" ,.!?")
+    sobre_musica = re.search(r"\b(musica|som|pra mim|para mim)\b", n)
+    if "?" in texto and not _MODAL.search(n) and not sobre_musica:    # "você toca violão?" é pergunta, não pedido
+        return None
+    if not sobre_musica and re.match(r"^(?:(?:oi|ei|ola|alicia)[ ,]*)*voce (?:toca|coloca|bota|manda|escuta|ouve)\b", n):   # "você toca ..." (afirmação)
+        return None
+    m = re.match(rf"^(?:{_PREFIXOS}\b[ ,]*)*{_VERBOS}\b(.*)$", n)
     if not m:
         return None
-    pal = m.group(1).strip(" ,.!?").split()
+    pal = m.group(2).strip(" ,.!?").split()
     while pal and pal[0] in _PARADAS:        # tira "uma música do/da..." do começo, sem mexer no nome do artista
         pal.pop(0)
     while pal and pal[-1] in _PARADAS | {"favor"}:
         pal.pop()
-    return " ".join(pal)
+    consulta = " ".join(pal)
+    if not consulta and m.group("verbo") in ("ouvir", "escutar") and not re.search(r"\b(musica|som|algo)\b", n):
+        return None                                                  # "você consegue ouvir?" não é pedido de música
+    return consulta
 
-
+_NEGA = re.compile(r"nao (?:tenho|consigo|posso|sei|faco)[^.!?]{0,50}(?:tocar|musica|funcao|som)|nao tenho essa|nao consigo (?:colocar|reproduzir)|sem essa funcao")
 _RUINS = re.compile(r"\b(horas?|hours?|full album|album completo|mix|playlist|compilation|coletanea|as melhores|best of|greatest hits)\b", re.I)
 
 
@@ -950,9 +1035,13 @@ async def alicia_musica(request: Request):
         sistema = alicia_ponte.montar_sistema(u.capitalize(), str(c.get("personalidade", "normal")), bool(c.get("sem_filtro")), texto) + (
             f"\n\n[AÇÃO JÁ FEITA PELO SERVIDOR] A música já está tocando: \"{t['titulo']}\" ({t.get('canal', '')}). "
             "Responda em UMA frase curta, no seu jeito, avisando que colocou para tocar. Não invente nada além disso.")
-        ok, resp = await asyncio.to_thread(alicia_ponte.perguntar_hermes, env, f"painel-{u}", sistema, texto, 60)
+        aviso = (f"(O servidor acabou de colocar a música \"{t['titulo']}\" de {t.get('canal', '')} para tocar, a pedido do usuário. "
+                 "Responda em uma frase curta e natural, no seu jeito, confirmando que já está tocando.)")
+        ok, resp = await asyncio.to_thread(alicia_ponte.perguntar_hermes, env, f"painel-{u}", sistema, aviso, 60)
         if ok and resp.strip():
-            expressao, resposta = alicia_ponte.separar_expressao(resp)
+            ex, fala = alicia_ponte.separar_expressao(resp)
+            if not _NEGA.search(_norm(fala)):                       # se o modelo disser que "não tem essa função", usa a frase padrão
+                expressao, resposta = ex, fala
     return {"texto": resposta, "expressao": expressao, "faixas": faixas, "origem": origem}
 
 

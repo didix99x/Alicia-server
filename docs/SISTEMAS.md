@@ -58,6 +58,8 @@ Cada sistema abaixo explica **o que faz**, **como funciona por dentro**, **onde 
 
 **Música por pedido:** no chat, "toca Linkin Park", "coloca algo animado", "quero ouvir…". Ela procura primeiro na sua biblioteca (e toca o artista inteiro, embaralhado); se não houver, busca no YouTube. A música **começa na hora** e a Alicia comenta logo em seguida. Entende também **pausa, continua, próxima, anterior, aumenta/abaixa o volume** e **"que música é essa?"** (esses comandos não gastam a IA).
 
+**Análise do servidor:** a Alicia **lê o estado real do servidor** a cada conversa (só leitura). O painel entrega a ela, junto da mensagem, um bloco com dados medidos naquele instante: processador, memória, disco, serviços, chave da NVIDIA e, quando a pergunta é sobre o servidor (disco, memória, lento, acessos, segurança, backup, "está tudo bem?"…), também os programas que mais gastam memória, a saúde do HD (SMART), a biblioteca, o último backup e o resumo das últimas 24 h do monitor (logins, senhas erradas, erros, eventos de segurança e os mais recentes). Ela responde com esses números, diz o que está bom, o que preocupa e o que fazer, e **não altera nada sozinha**.
+
 **Sem chave da NVIDIA:** o painel e tudo que não usa IA funcionam; a Alicia mostra "A Alicia ainda não tem cérebro. Coloque a chave da NVIDIA em Configurações."
 
 **Modo de teste:** com `ALICIA_MODO_TESTE=1` o Hermes conversa com um **modelo falso** (`scripts/modelo_falso.py`), útil para testar sem gastar a API.

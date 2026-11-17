@@ -69,7 +69,7 @@ async function aliEnviar(txt) {
   const cmd = comandoMusica(txt);                               // pausa, próxima, volume...: resolve na hora, sem gastar a IA
   if (cmd) { const fala = executaComando(cmd); aliAddMsg('al', fala); if (AL.voz) falar(fala, 'feliz'); return; }
   const dig = aliAddMsg('al', '', true); $('#aliImg').src = '/api/alicia/imagem/pensando';
-  if (PEDE_MUSICA.test(semAcento(txt))) {                       // "toca X": a Alicia acha a música, coloca para tocar e responde no jeito dela
+  if (/\b(toca|toque|tocar|ponha|coloca|coloque|colocar|poe|bota|bote|botar|ouvir|escutar|reproduz\w*|manda|mande)\b/.test(semAcento(txt))) {                       // "toca X": a Alicia acha a música, coloca para tocar e responde no jeito dela
     try {
       const r = await post('/api/alicia/musica', { texto: txt, so_achar: true });          // 1ª etapa: acha e já começa a tocar
       if (!r.nao_e_musica) {
@@ -108,7 +108,7 @@ ENTRAR.alicia = async () => {
   const mic = h('button', { class: 'btn-ic', title: SR ? 'Falar com a Alicia' : 'Seu navegador não tem reconhecimento de voz', disabled: !SR, onclick: () => {
     const r = new SR(); r.lang = 'pt-BR'; r.interimResults = false; mic.textContent = '🔴';
     r.onresult = ev => aliEnviar(ev.results[0][0].transcript); r.onend = () => mic.textContent = '🎤'; r.onerror = () => { mic.textContent = '🎤'; toast('Não consegui ouvir. Veja a permissão do microfone.', 'erro'); }; r.start(); } }, '🎤');
-  const rapidas = ['O que você sabe fazer?', 'Me conte uma curiosidade', 'Sugira uma música para mim', 'Como está o servidor?'];
+  const rapidas = ['O que você sabe fazer?', 'Analise o servidor', 'Toca uma música pra mim', 'Me conte uma curiosidade'];
   P.append(h('div', { class: 'alic' },
     h('div', { class: 'box perfil' }, h('img', { class: 'av', id: 'aliImg', src: '/api/alicia/imagem/feliz', alt: 'Alicia' }), h('h3', null, 'Alicia'), h('span', { class: 'pill', id: 'aliEst' }),
       h('p', { class: 'mut peq' }, 'Jeito dela:'), chips,

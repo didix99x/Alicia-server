@@ -43,3 +43,6 @@ Você enviou `Alicia-project-main.zip` (versão mais nova). A cópia em `alicia/
 - **Usuários criados pelo painel** (Configurações) em vez de só por script.
 - **Voz da Alicia pelo servidor (edge-tts, voz Francisca) em vez da voz do navegador:** a do navegador no Windows do usuário é masculina e varia de aparelho para aparelho. Usa o serviço online do Microsoft Edge (gratuito, o mesmo do projeto original); fallback para a voz do navegador escolhendo voz feminina.
 - **Escala da interface por tamanho de tela:** todos os tamanhos do CSS em rem e o tamanho-base calculado pela largura/altura (até 1,9x). Descartado: CSS zoom (comportamento diferente entre navegadores com vh/vw).
+
+- **Alicia sempre sabe o que o servidor faz:** um bloco fixo no prompt diz que ela PODE tocar música, controlar o player e analisar o servidor (antes ela às vezes respondia que não tinha essa função). O comentário depois de um pedido de música recebe um aviso neutro (o servidor acabou de colocar X para tocar) em vez do pedido cru, e uma frase padrão substitui qualquer resposta que negue a função.
+- **Análise do servidor por leitura:** o painel mede e entrega os dados à Alicia; ela não ganha terminal nem ferramentas de sistema (continua só leitura).

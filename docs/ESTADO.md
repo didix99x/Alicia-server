@@ -10,6 +10,7 @@ Este documento separa com honestidade **o que foi verificado**, **o que foi só 
 | Login | Entrada, senha errada, sessão inválida, bloqueio de caminhos; criação, exclusão e troca de senha de usuários |
 | Visitante | Entrada sem senha; rotas restritas devolvem 403; login por senha do perfil visitante é recusado |
 | Alicia | Conversa real com o modelo da NVIDIA (resposta, expressão, personalidade, memória de sessão); voz Francisca gerada pelo servidor |
+| Alicia analisa o servidor | Pergunta de análise respondida com números reais (memória, disco, HD, backup, acessos e alertas) |
 | Música | Busca (biblioteca + YouTube), download e organização por gênero/artista, reprodução com avanço, rádio do mesmo gênero, fila, curtidas, botão de fechar, pedidos pela Alicia (música, pausa, próxima, volume) |
 | Jogos | Biblioteca em blocos, organização automática por conteúdo do arquivo, emulador abrindo um jogo de teste e um de Super Nintendo, salvar/ler progresso no servidor, camada sobre o painel com a música continuando |
 | Filmes | Jellyfin dentro do painel em tela cheia, login automático do usuário "casa", envio de filme e série com reconhecimento pelo Jellyfin |

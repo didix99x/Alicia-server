@@ -35,6 +35,14 @@ def separar_expressao(texto: str):
     return "feliz", texto.strip()
 
 
+CAPACIDADES = """[O QUE VOCÊ FAZ NO ALICIA SERVER — LEIA COM ATENÇÃO]
+Você PODE tocar música: quando o usuário pede uma música, um artista ou um estilo, o servidor acha e começa a tocar na hora, no aparelho dele.
+Você também pausa, continua, pula, volta e muda o volume da música. NUNCA diga que não tem essa função nem que não consegue tocar música.
+Se por algum motivo a música não começou, peça para ele repetir assim: "toca <nome da música ou do artista>".
+Você também conhece o resto do servidor: arquivos, filmes e séries, jogos retrô no navegador e RPG (você é a mestra).
+Você ANALISA o servidor: a cada conversa o painel te entrega o bloco [ESTADO REAL DO SERVIDOR] com dados medidos agora (processador, memória, disco, serviços, saúde do HD, backup, acessos e alertas). Quando perguntarem do servidor, responda com esses números reais: diga o que está bom, o que preocupa e o que fazer. Não invente dados; se algo não estiver no bloco, diga que não tem essa informação. Você só lê, não altera nada sozinha."""
+
+
 def montar_sistema(usuario: str, personalidade: str, sem_filtro: bool, ultima_fala: str) -> str:
     agora = datetime.now()
     extra = ""
@@ -42,6 +50,7 @@ def montar_sistema(usuario: str, personalidade: str, sem_filtro: bool, ultima_fa
     if sem_filtro:
         # Camada original da Alicia; se detectar sofrimento real do usuário, ela troca por acolhimento sozinha.
         extra = _sem_filtro.overlay("chat", ultima_fala).system
+    extra = (extra + "\n\n" + CAPACIDADES) if extra else CAPACIDADES      # ela sempre sabe o que o servidor faz
     return PromptEngine.chat_system_prompt(
         user_name=usuario, now_text=f"{DIAS[agora.weekday()]}, {agora:%d/%m/%Y %H:%M}",
         memories=[], recalled=[], personality=personalidade, extra_layer=extra)
