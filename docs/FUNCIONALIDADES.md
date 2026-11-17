@@ -120,7 +120,7 @@ Regras simplificadas, inspiradas no SRD 5.2 (CC-BY-4.0).
 - **Chave da IA (NVIDIA):** cola e testa na hora; fica mascarada e só no `.env`.
 - **Usuários:** criar, apagar e trocar senha.
 - **Visitante:** ligar ou desligar.
-- **Aparência:** 6 cores de destaque (roxo, rosa, verde-água, azul, laranja, vermelho) e 3 fundos: **🌌 Aurora** (luzes coloridas se movendo devagar, a cor segue o destaque), **✨ Estrelas** e **⬛ Liso**. A escolha fica salva no aparelho. O movimento é leve (só gradientes) e para sozinho se o aparelho pedir menos animação.
+- **🎨 Temas (13):** **escuros** (Roxo Noturno, Preto Total, Grafite, Oceano, Floresta, Pôr do Sol, Sakura, Neon, Retrô Terminal), **claros** (Claro Lavanda, Claro Céu, Papel) e **Alto Contraste** (preto e amarelo, para enxergar melhor). Cada tema tem uma prévia; um clique aplica na hora. Vale só para o aparelho em que foi escolhido (a TV, o celular e o notebook podem ter temas diferentes). Há também o **efeito de fundo** (aurora animada, brilhos ou nenhum) e o modo TV.
 - **Voz e personalidade** da Alicia.
 
 ## 📱 Celular, TV e APK

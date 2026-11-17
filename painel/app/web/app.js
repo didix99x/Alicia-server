@@ -109,11 +109,28 @@ $('#btSair').onclick = async () => { await fetch('/api/logout', { method: 'POST'
 
 function aplicaPrefs() {
   try {
-    const cor = localStorage.getItem('cor'); if (cor) document.documentElement.dataset.cor = cor; const fu = localStorage.getItem('fundo'); if (fu) document.documentElement.dataset.fundo = fu;
+    const tm = localStorage.getItem('tema'); if (tm) document.documentElement.dataset.tema = tm; corMeta(); const fu = localStorage.getItem('fundo'); if (fu) document.documentElement.dataset.fundo = fu;
     document.body.classList.toggle('tv', localStorage.getItem('tv') === '1');
   } catch (e) {}
 }
-function setCor(c) { document.documentElement.dataset.cor = c === 'roxo' ? '' : c; try { localStorage.setItem('cor', c === 'roxo' ? '' : c); } catch (e) {} }
+const TEMAS = [  // id, nome, descrição, [fundo, cartão, destaque, texto]
+  ['', 'Roxo Noturno', 'O clássico da casa, com aurora', ['#0d0f15', '#1a1d27', '#a78bfa', '#eceff8'], 'escuro'],
+  ['preto', 'Preto Total', 'Dark mode puro, economiza bateria em tela OLED', ['#000000', '#101014', '#a78bfa', '#eceff8'], 'escuro'],
+  ['grafite', 'Grafite', 'Cinza sóbrio com azul-claro', ['#121316', '#1e2025', '#7dd3fc', '#eceff8'], 'escuro'],
+  ['oceano', 'Oceano', 'Azul profundo e turquesa', ['#06111b', '#0e2335', '#38bdf8', '#eceff8'], 'escuro'],
+  ['floresta', 'Floresta', 'Verdes de mata fechada', ['#08120d', '#12241a', '#4ade80', '#eceff8'], 'escuro'],
+  ['sol', 'Pôr do Sol', 'Laranja e rosa de fim de tarde', ['#150b0f', '#271820', '#fb923c', '#eceff8'], 'escuro'],
+  ['sakura', 'Sakura', 'Rosa de flor de cerejeira', ['#150c17', '#27182c', '#f9a8d4', '#eceff8'], 'escuro'],
+  ['neon', 'Neon', 'Ciano e magenta, estilo cyberpunk', ['#07060f', '#120f26', '#22d3ee', '#eceff8'], 'escuro'],
+  ['retro', 'Retrô Terminal', 'Verde fósforo e letra de computador antigo', ['#030803', '#0b160b', '#4ade80', '#d4ffd4'], 'escuro'],
+  ['lavanda', 'Claro Lavanda', 'Modo claro, suave e elegante', ['#f1f0fa', '#ffffff', '#6d4ae0', '#1d1b2e'], 'claro'],
+  ['ceu', 'Claro Céu', 'Modo claro azulado', ['#eaf3fb', '#ffffff', '#0369a1', '#10283c'], 'claro'],
+  ['papel', 'Papel', 'Modo claro quente, cor de papel', ['#f5efe2', '#fffdf7', '#b45309', '#2b2418'], 'claro'],
+  ['contraste', 'Alto Contraste', 'Preto e amarelo, para enxergar melhor', ['#000000', '#0b0b0b', '#ffd400', '#ffffff'], 'acessível'],
+];
+function corMeta() { const t = TEMAS.find(x => x[0] === (document.documentElement.dataset.tema || '')); const m = document.querySelector('meta[name=theme-color]'); if (m && t) m.content = t[3][0]; }
+function setTema(id) { document.documentElement.dataset.tema = id; corMeta(); try { localStorage.setItem('tema', id); } catch (e) {} }
+function setCor() {}
 function setFundo(f) { document.documentElement.dataset.fundo = f === 'aurora' ? '' : f; try { localStorage.setItem('fundo', f === 'aurora' ? '' : f); } catch (e) {} }
 function setTV(v) { document.body.classList.toggle('tv', v); try { localStorage.setItem('tv', v ? '1' : '0'); } catch (e) {} toast(v ? 'Modo TV ligado: use as setas e o OK.' : 'Modo TV desligado.'); }
 $('#btTV').onclick = () => setTV(!document.body.classList.contains('tv'));

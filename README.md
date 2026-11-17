@@ -116,7 +116,7 @@ Um botão e a pessoa já entra, **sem senha**, só em Jogos, Música, Filmes e R
 <td valign="top">
 
 ### 📱 App Android e modo TV
-**APK leve** que abre o painel no celular e na TV box, com navegação por controle remoto e microfone para a Alicia. O painel tem **modo TV**, **abas embaixo no celular** e **se adapta de telas pequenas a monitores ultrawide**. Visual com **fundo aurora animado**, 6 cores e 3 fundos à escolha.
+**APK leve** que abre o painel no celular e na TV box, com navegação por controle remoto e microfone para a Alicia. O painel tem **modo TV**, **abas embaixo no celular** e **se adapta de telas pequenas a monitores ultrawide**. Visual com **13 temas** (escuros, **modo claro**, retrô, neon e alto contraste) e fundo aurora animado.
 
 </td>
 </tr>

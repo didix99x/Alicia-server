@@ -26,7 +26,7 @@ Cada sistema abaixo explica **o que faz**, **como funciona por dentro**, **onde 
 
 ---
 
-O fundo do painel é uma camada fixa feita só com gradientes CSS (aurora animada ou estrelas), sem imagens; as cores seguem a cor de destaque escolhida em Configurações.
+O fundo do painel é uma camada fixa feita só com gradientes CSS (aurora animada ou estrelas), sem imagens; as cores seguem o **tema** escolhido em Configurações (13 temas: escuros, claros e alto contraste, definidos por variáveis CSS em `app.css`).
 
 ## 2. Login, usuários e visitante
 
