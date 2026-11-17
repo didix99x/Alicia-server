@@ -26,6 +26,8 @@ Cada sistema abaixo explica **o que faz**, **como funciona por dentro**, **onde 
 
 ---
 
+O fundo do painel é uma camada fixa feita só com gradientes CSS (aurora animada ou estrelas), sem imagens; as cores seguem a cor de destaque escolhida em Configurações.
+
 ## 2. Login, usuários e visitante
 
 - **Senhas** guardadas com **Argon2** (`argon2-cffi`); sessão em cookie assinado (`itsdangerous`), `HttpOnly`, válida por 14 dias.

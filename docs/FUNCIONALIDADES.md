@@ -120,6 +120,7 @@ Regras simplificadas, inspiradas no SRD 5.2 (CC-BY-4.0).
 - **Chave da IA (NVIDIA):** cola e testa na hora; fica mascarada e só no `.env`.
 - **Usuários:** criar, apagar e trocar senha.
 - **Visitante:** ligar ou desligar.
+- **Aparência:** 6 cores de destaque (roxo, rosa, verde-água, azul, laranja, vermelho) e 3 fundos: **🌌 Aurora** (luzes coloridas se movendo devagar, a cor segue o destaque), **✨ Estrelas** e **⬛ Liso**. A escolha fica salva no aparelho. O movimento é leve (só gradientes) e para sozinho se o aparelho pedir menos animação.
 - **Voz e personalidade** da Alicia.
 
 ## 📱 Celular, TV e APK

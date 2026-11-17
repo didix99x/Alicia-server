@@ -109,11 +109,12 @@ $('#btSair').onclick = async () => { await fetch('/api/logout', { method: 'POST'
 
 function aplicaPrefs() {
   try {
-    const cor = localStorage.getItem('cor'); if (cor) document.documentElement.dataset.cor = cor;
+    const cor = localStorage.getItem('cor'); if (cor) document.documentElement.dataset.cor = cor; const fu = localStorage.getItem('fundo'); if (fu) document.documentElement.dataset.fundo = fu;
     document.body.classList.toggle('tv', localStorage.getItem('tv') === '1');
   } catch (e) {}
 }
 function setCor(c) { document.documentElement.dataset.cor = c === 'roxo' ? '' : c; try { localStorage.setItem('cor', c === 'roxo' ? '' : c); } catch (e) {} }
+function setFundo(f) { document.documentElement.dataset.fundo = f === 'aurora' ? '' : f; try { localStorage.setItem('fundo', f === 'aurora' ? '' : f); } catch (e) {} }
 function setTV(v) { document.body.classList.toggle('tv', v); try { localStorage.setItem('tv', v ? '1' : '0'); } catch (e) {} toast(v ? 'Modo TV ligado: use as setas e o OK.' : 'Modo TV desligado.'); }
 $('#btTV').onclick = () => setTV(!document.body.classList.contains('tv'));
 $('#btTour').onclick = () => tour(0);
