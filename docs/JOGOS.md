@@ -31,9 +31,14 @@ Depende do **seu aparelho**, não do notebook. NES/SNES/GB/GBA rodam bem em quas
 Testei no navegador: lista de jogos, abrir o jogo de teste (o emulador do NES iniciou e desenhou a tela), salvar/ler save no servidor e bloqueio de acesso a arquivos fora da pasta. **Não testei jogos reais** (não tenho jogos), controle físico, celular, TV box, nem PS1/N64.
 
 
-## Jogos em .rar (comum no PlayStation)
+## Jogos em .rar ou em pastas (comum no PlayStation)
 
-Muitos jogos de PlayStation vêm em .rar com uma pasta de .bin + .cue, formato que o emulador não abre direto. Ao abrir a aba Jogos, o servidor **converte sozinho** cada .rar em um .zip com só o jogo (o .rar original vai para Jogos/Originais_rar, que você pode apagar para liberar espaço). A conversão usa o 7-Zip e pode levar alguns minutos; um aviso aparece na aba enquanto isso.
+Jogos de PlayStation costumam vir em `.rar`, ou numa pasta com `.bin` + `.cue`, formatos que o emulador não abre direto. Ao abrir a aba Jogos, o servidor **arruma sozinho**:
 
-- **Arquivo com senha:** se o .rar for protegido, a aba mostra um aviso com um campo para digitar a senha (geralmente está no site de onde você baixou). A senha só é usada para descompactar e **não fica guardada**.
-- **Pasta com várias versões** (por exemplo original e dublado): o servidor usa a primeira que achar.
+- **`.rar`** vira um `.zip` só com o jogo (usa o 7-Zip).
+- **Pasta já descompactada** (com `.bin`/`.cue`, mesmo dentro de subpastas como `JOGO` ou `cd 1`) vira um `.zip` por jogo. O que não é o jogo (atalhos de site, textos) é ignorado.
+- **Vários discos** viram uma entrada por disco: `Nome - CD 1`, `Nome - CD 2`.
+- **`.cue` com o nome do `.bin` errado** (acontece bastante em pacotes baixados) é **corrigido automaticamente** dentro do zip.
+- **Capa:** uma imagem com "capa" no nome dentro da pasta vira a capa do jogo.
+- Os originais vão para `Jogos/Originais_rar` (pode apagar depois para liberar espaço). Um aviso aparece na aba enquanto o servidor trabalha (alguns minutos).
+- **Arquivo com senha:** a aba mostra um campo para digitar a senha (geralmente está no site de onde você baixou). A senha só é usada para descompactar e **não fica guardada**.

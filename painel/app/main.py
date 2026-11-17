@@ -691,22 +691,98 @@ def _extrair(rar: Path, destino: Path):
     return r.returncode == 0, False
 
 
+def _limpa_nome(t: str) -> str:
+    t = re.sub(r"[\[\(].*?[\]\)]", " ", t.replace("_", " "))
+    t = re.sub(r"[\\/:*?\"<>|]", " ", t)
+    return re.sub(r"\s+", " ", t).strip(" -") or "Jogo"
+
+
+def _empacotar(raiz: Path, base: str, console_dir: Path) -> list:
+    """Procura jogos dentro de uma pasta (.cue + .bin, .iso, .sfc…) e cria um .zip simples por jogo/disco em console_dir.
+    Jogo de vários discos vira uma entrada por disco ('Nome - CD 1', 'Nome - CD 2'). Devolve os nomes criados."""
+    import zipfile
+    achados = [p for p in raiz.rglob("*") if p.is_file() and p.suffix.lower() in EXT_ROM]
+    cues = [p for p in achados if p.suffix.lower() == ".cue"]
+    jogos = []                                            # (arquivos, dica de nome)
+    usados = set()
+    def disco(t):
+        m = re.search(r"cd\s*0?(\d)|dis[ck]o?\s*0?(\d)", t, re.I)
+        return next((g for g in m.groups() if g), None) if m else None
+
+    for cue in sorted(cues):
+        txt = cue.read_text(encoding="utf-8", errors="ignore")
+        nomes_ref = re.findall(r'FILE\s+"([^"\r\n]+)"\s+\w+', txt, re.I) or re.findall(r'FILE\s+(\S+)\s+\w+', txt, re.I)
+        bins = []
+        for nr in nomes_ref:
+            alvo_ = next((x for x in cue.parent.iterdir() if x.name.lower() == nr.lower()), None)
+            if alvo_ is None:                                   # a .cue aponta para um nome que não existe: acha o .bin certo da mesma pasta
+                livres = [x for x in cue.parent.iterdir() if x.suffix.lower() == ".bin" and x not in usados and x not in bins]
+                alvo_ = (next((x for x in livres if x.stem.lower() == cue.stem.lower()), None)
+                         or next((x for x in livres if disco(x.stem) and disco(x.stem) == disco(cue.stem)), None)
+                         or (livres[0] if len(livres) == 1 else None))
+                if alvo_ is not None:
+                    txt = txt.replace(nr, alvo_.name)           # corrige o nome dentro do .cue
+            if alvo_ is not None:
+                bins.append(alvo_)
+        usados.update(bins)
+        jogos.append(([(cue, txt)] + bins, f"{cue.parent.name} {cue.stem}"))
+    for p in achados:
+        if p.suffix.lower() not in (".cue", ".bin") and p not in usados:
+            jogos.append(([p], p.stem))
+    nomes = []
+    for i, (arqs, dica) in enumerate(jogos, 1):
+        nome = _limpa_nome(base)
+        if len(jogos) > 1:
+            nome += f" - CD {disco(dica) or i}"
+        alvo = console_dir / f"{nome}.zip"
+        if alvo.exists():
+            continue
+        parcial = alvo.with_suffix(".parcial")
+        with zipfile.ZipFile(parcial, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
+            for p in arqs:
+                if isinstance(p, tuple):
+                    z.writestr(p[0].name, p[1])                 # o .cue já corrigido
+                else:
+                    z.write(p, p.name)
+        parcial.replace(alvo)
+        for capa in list(raiz.rglob("*.jpg")) + list(raiz.rglob("*.png")):
+            if re.search(r"capa|cover|box", capa.stem, re.I):
+                shutil.copy(capa, console_dir / f"{nome}{capa.suffix.lower()}")
+                break
+        nomes.append(alvo.name)
+    return nomes
+
+
 def _converter_rars():
-    """Jogos enviados em .rar (muito comum no PS1: pasta com .bin + .cue) viram um .zip simples que o emulador entende.
-    O .rar original vai para Jogos/Originais_rar (pode apagar depois para liberar espaço). .rar com senha esperam a senha no painel."""
+    """Deixa os jogos prontos para o emulador: .rar viram .zip e PASTAS com .bin/.cue (jogos já descompactados) também.
+    Os originais vão para Jogos/Originais_rar (pode apagar depois para liberar espaço). .rar com senha esperam a senha no painel."""
     if _conv_ativa["rodando"]:
         return
     _conv_ativa["rodando"] = True
     try:
-        import tempfile, zipfile
+        import tempfile
+        originais = JOGOS_DIR / "Originais_rar"
         for pasta in list(CONSOLES):
-            for rar in sorted((JOGOS_DIR / pasta).glob("*.rar")):
+            cdir = JOGOS_DIR / pasta
+            for sub in sorted(x for x in cdir.iterdir() if x.is_dir()):          # jogos já descompactados em pastas
+                _conv_ativa["atual"] = sub.name
+                try:
+                    nomes = _empacotar(sub, sub.name, cdir)
+                    if nomes:
+                        originais.mkdir(exist_ok=True)
+                        destino = originais / sub.name
+                        if destino.exists():
+                            destino = originais / f"{sub.name}_{int(time.time())}"
+                        shutil.move(str(sub), str(destino))
+                        registrar("JOGOS", "-", "-", f"organizou a pasta '{sub.name}': {', '.join(nomes)}", "ok", "ok")
+                except Exception as e:
+                    registrar("JOGOS", "-", "-", f"erro ao organizar a pasta '{sub.name}': {str(e)[:80]}", "erro", "erro")
+            for rar in sorted(cdir.glob("*.rar")):
                 if any(x["arquivo"] == rar.name for x in _conv_ativa["senha"]) and rar.name not in _senhas_rar:
                     continue                                   # já sabemos que pede senha e ela ainda não foi informada
                 _conv_ativa["senha"] = [x for x in _conv_ativa["senha"] if x["arquivo"] != rar.name]
-                nome = re.sub(r"\s+", " ", rar.stem.replace("_", " ")).strip() or rar.stem
+                nome = _limpa_nome(rar.stem)
                 _conv_ativa["atual"] = nome
-                alvo = JOGOS_DIR / pasta / f"{nome}.zip"
                 tmp = Path(tempfile.mkdtemp(prefix="conv_", dir=JOGOS_DIR))
                 try:
                     ok, pede_senha = _extrair(rar, tmp)
@@ -714,22 +790,15 @@ def _converter_rars():
                         _conv_ativa["senha"].append({"pasta": pasta, "arquivo": rar.name, "nome": nome, "errada": rar.name in _senhas_rar})
                         _senhas_rar.pop(rar.name, None)
                         continue
-                    achados = [p for p in tmp.rglob("*") if p.is_file() and p.suffix.lower() in EXT_ROM]
-                    if not ok or not achados:
+                    nomes = _empacotar(tmp, nome, cdir) if ok else []
+                    if not nomes:
                         registrar("JOGOS", "-", "-", f"não consegui abrir '{rar.name}' (precisa ter .bin/.cue ou o arquivo do jogo dentro)", "erro", "erro")
                         rar.rename(rar.with_suffix(".rar.erro"))
                         continue
-                    cue = next((p for p in achados if p.suffix.lower() == ".cue"), achados[0])
-                    grupo = [p for p in achados if p.parent == cue.parent]       # só o jogo (ignora outras pastas, ex. versão original/dublada)
-                    parcial = alvo.with_suffix(".parcial")
-                    with zipfile.ZipFile(parcial, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
-                        for p in grupo:
-                            z.write(p, p.name)
-                    parcial.replace(alvo)
-                    (JOGOS_DIR / "Originais_rar").mkdir(exist_ok=True)
-                    rar.replace(JOGOS_DIR / "Originais_rar" / rar.name)
+                    originais.mkdir(exist_ok=True)
+                    rar.replace(originais / rar.name)
                     _senhas_rar.pop(rar.name, None)
-                    registrar("JOGOS", "-", "-", f"converteu '{rar.name}' em '{alvo.name}' ({len(grupo)} arquivos)", "ok", "ok")
+                    registrar("JOGOS", "-", "-", f"converteu '{rar.name}' em {', '.join(nomes)}", "ok", "ok")
                 except Exception as e:
                     registrar("JOGOS", "-", "-", f"erro ao converter '{rar.name}': {str(e)[:80]}", "erro", "erro")
                 finally:
@@ -737,7 +806,6 @@ def _converter_rars():
     finally:
         _conv_ativa["rodando"] = False
         _conv_ativa["atual"] = ""
-
 
 @app.post("/api/jogos/senha")
 async def jogos_senha(request: Request):
@@ -757,7 +825,7 @@ async def jogos_senha(request: Request):
 async def jogos_lista(request: Request):
     exigir_login(request)
     await asyncio.to_thread(_organizar_jogos)
-    if not _conv_ativa["rodando"] and any(r.name not in {x["arquivo"] for x in _conv_ativa["senha"]} or r.name in _senhas_rar for c in CONSOLES for r in (JOGOS_DIR / c).glob("*.rar")):
+    if not _conv_ativa["rodando"] and any((r.is_dir() or r.name not in {x["arquivo"] for x in _conv_ativa["senha"]} or r.name in _senhas_rar) for c in CONSOLES for r in (JOGOS_DIR / c).iterdir() if r.is_dir() or r.suffix.lower() == ".rar"):
         __import__("threading").Thread(target=_converter_rars, daemon=True).start()
     favs = set(_ler_favoritos(exigir_login(request)))
     out = []
