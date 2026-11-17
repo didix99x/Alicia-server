@@ -41,9 +41,13 @@ function ajustaJogo() {
   o.style.bottom = (innerHeight - topo) + 'px'; o.style.left = '0';
 }
 let JOGO_ATUAL = null;
-function abrirJogo(pasta, arquivo) {
+function abrirMulti(codigo) {
+  JOGO_ATUAL = null; $('#jogoFrame').src = '/multi?sala=' + encodeURIComponent(codigo) + '&embed=1';
+  $('#jogoOverlay').style.display = 'block'; ajustaJogo();
+}
+function abrirJogo(pasta, arquivo, multi) {
   JOGO_ATUAL = { pasta, arquivo, t0: Date.now() };
-  $('#jogoFrame').src = '/jogar?c=' + encodeURIComponent(pasta) + '&a=' + encodeURIComponent(arquivo) + '&embed=1';
+  $('#jogoFrame').src = '/jogar?c=' + encodeURIComponent(pasta) + '&a=' + encodeURIComponent(arquivo) + '&embed=1' + (multi ? '&m=1' : '');
   $('#jogoOverlay').style.display = 'block'; ajustaJogo(); setTimeout(() => { try { $('#jogoFrame').contentWindow.focus(); } catch (e) {} }, 600);
 }
 function fecharJogo() { if (JOGO_ATUAL) { const j = JOGO_ATUAL; JOGO_ATUAL = null; try { fetch('/api/jogos/fim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pasta: j.pasta, arquivo: j.arquivo, segundos: Math.round((Date.now() - j.t0) / 1000) }), keepalive: true }); } catch (e) {} } $('#jogoOverlay').style.display = 'none'; $('#jogoFrame').src = 'about:blank'; }
@@ -77,6 +81,7 @@ function cartaoJogo(c, j) {
   const card = h('div', { class: 'jogo', tabindex: 0, style: `background:linear-gradient(145deg,${c.cor}dd,#1a1d27)`, onclick: () => abrirJogo(c.pasta, j.arquivo), onkeydown: e => { if (e.key === 'Enter' && e.target === card) card.click(); } },
     h('i', { class: 'inicial' }, ini), img,
     h('button', { class: 'fav' + (j.fav ? ' on' : ''), title: j.fav ? 'Tirar dos favoritos' : 'Favoritar', 'aria-label': 'Favoritar ' + j.nome, onclick: e => { e.stopPropagation(); jogoFav(c, j); } }, j.fav ? '★' : '☆'),
+    c.jogadores > 1 && h('button', { class: 'multi', title: 'Jogar junto com amigos (até ' + c.jogadores + ' jogadores)', 'aria-label': 'Jogar junto: ' + j.nome, onclick: e => { e.stopPropagation(); abrirJogo(c.pasta, j.arquivo, true); } }, '👥'),
     h('em', { class: 'selo', style: 'background:' + c.cor }, c.pasta), h('b', null, j.nome), h('span', null, '▶ Jogar'));
   return card;
 }
@@ -91,7 +96,21 @@ function painelEmuladores() {
         e.bios !== null && h('span', { class: 'pill ' + (e.bios ? 'ok' : 'av'), title: 'Jogos/BIOS' }, e.bios ? '✓ BIOS' : 'BIOS opcional')));
   }));
 }
-async function jogosPinta(recarrega) {
+async function salasPinta(SL) {
+  clearTimeout(JG.ts); let salas = [];
+  try { salas = await api('/api/multi/salas'); } catch (e) {}
+  if (!SL.isConnected) return;
+  SL.textContent = '';
+  const campo = h('input', { type: 'text', placeholder: 'Código da sala', maxlength: 4, style: 'width:9rem;text-transform:uppercase' });
+  const entrar = c => { if (c && c.length === 4) abrirMulti(c.toUpperCase()); };
+  campo.onkeydown = e => { if (e.key === 'Enter') entrar(campo.value); };
+  SL.append(h('div', { class: 'box' }, h('div', { class: 'rowh' }, h('h3', null, '👥 Jogar junto ', h('span', { class: 'mut peq', style: 'font-weight:400' }, salas.length ? salas.length + ' sala(s) aberta(s)' : 'nenhuma sala aberta')),
+    h('div', { class: 'lin' }, campo, h('button', { class: 'btn sec', onclick: () => entrar(campo.value) }, 'Entrar com código'))),
+    salas.length ? h('div', { class: 'salas' }, salas.map(s => h('div', { class: 'sala' }, h('div', null, h('b', null, s.nome), h('div', { class: 'mut peq' }, s.pasta + ' · sala de ' + s.host + ' · ' + s.jogadores + '/' + s.max + ' jogadores')),
+      h('button', { class: 'btn', disabled: s.jogadores >= s.max, onclick: () => abrirMulti(s.codigo) }, s.jogadores >= s.max ? 'Cheia' : '🎮 Entrar')))) :
+      h('p', { class: 'mut peq' }, 'Para criar uma sala, toque no botão 👥 de um jogo (Nintendo, Super Nintendo, Nintendo 64 ou PlayStation). Seus amigos aparecem aqui para entrar, ou usam o código de 4 letras. O jogo roda no seu aparelho e eles recebem a tela. Mantenha a tela do anfitrião ligada e visível.')));
+  if (atual === 'jogos') JG.ts = setTimeout(() => salasPinta(SL), 5000);
+}async function jogosPinta(recarrega) {
   if (recarrega || !JG.dados.length) { try { JG.dados = await api('/api/jogos'); CJOGOS = JG.dados; CJ_T = Date.now(); } catch (e) { return; } }
   const L = $('#jgLista'); if (!L) return; L.textContent = ''; const q = JG.q.toLowerCase(); let total = 0;
   clearTimeout(JG.t); const conv = JG.dados.map(c => c.convertendo).find(Boolean); if (conv) JG.t = setTimeout(() => { if (atual === 'jogos') jogosPinta(true); }, 15000);
@@ -104,6 +123,7 @@ async function jogosPinta(recarrega) {
       h('p', { class: 'mut peq' }, (x.errada ? 'A senha anterior não funcionou. ' : '') + 'Quem preparou o arquivo costuma deixar a senha no site de onde você baixou. A senha só é usada para descompactar e não fica guardada.'),
       h('div', { class: 'lin' }, campo, h('button', { class: 'btn', onclick: enviar }, 'Descompactar'))));
   }));
+  const SL = h('div', { id: 'jgSalas' }); L.append(SL); salasPinta(SL);
   const E = $('#jgEmus'); if (E) { E.textContent = ''; E.append(painelEmuladores()); }
   const chips = $('#jgChips'); if (chips) {
     chips.textContent = ''; const nf = JG.dados.reduce((n, c) => n + c.jogos.filter(j => j.fav).length, 0);

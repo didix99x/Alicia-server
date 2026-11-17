@@ -74,7 +74,7 @@ Busca em biblioteca e YouTube, **toca no aparelho que você está usando** (não
 <td valign="top">
 
 ### 🎮 Jogos retrô no navegador
-**Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation.** Biblioteca em blocos com **capas oficiais** (buscadas sozinhas), botão de **⭐ favoritar**, **painel de emuladores** (qual é, se está pronto, se é leve ou pesado), **console detectado pelo conteúdo do arquivo**, progresso **salvo no servidor** e a música continua tocando enquanto você joga.
+**Nintendo, Super Nintendo, Nintendo 64, Game Boy, Game Boy Advance e PlayStation.** Biblioteca em blocos com **capas oficiais** (buscadas sozinhas), botão de **⭐ favoritar**, **painel de emuladores** (qual é, se está pronto, se é leve ou pesado), **console detectado pelo conteúdo do arquivo**, **multiplayer: jogue junto com amigos**, progresso **salvo no servidor** e a música continua tocando enquanto você joga.
 
 </td>
 </tr>

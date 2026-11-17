@@ -837,7 +837,7 @@ async def jogos_lista(request: Request):
                 itens.append({"arquivo": f.name, "nome": _nome_bonito(f), "capa": capa})
         for it in itens:
             it["fav"] = f"{pasta}/{it['arquivo']}" in favs
-        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens, "emulador": _info_emulador(pasta, nucleo), "convertendo": _conv_ativa["atual"] if _conv_ativa["rodando"] else "", "pede_senha": [x for x in _conv_ativa["senha"] if x["pasta"] == pasta]})
+        out.append({"pasta": pasta, "nome": nome, "cor": cor, "jogos": itens, "jogadores": JOGADORES.get(pasta, 1), "emulador": _info_emulador(pasta, nucleo), "convertendo": _conv_ativa["atual"] if _conv_ativa["rodando"] else "", "pede_senha": [x for x in _conv_ativa["senha"] if x["pasta"] == pasta]})
     return out
 
 def _arquivo_jogo(pasta: str, arquivo: str) -> Path:
@@ -1072,6 +1072,117 @@ async def jogos_imagem(request: Request, pasta: str, arquivo: str):
     if not p:
         raise HTTPException(404, "Sem capa.")
     return FileResponse(p, headers={"Cache-Control": "max-age=604800"})
+
+# ----- Multiplayer: quem abre o jogo ("anfitrião") transmite a tela para os amigos e recebe os controles deles -----
+# O jogo roda só no aparelho do anfitrião (WebRTC); o servidor apenas apresenta os aparelhos uns aos outros (sinalização) e lista as salas.
+JOGADORES = {"Nintendo": 2, "Super Nintendo": 2, "Nintendo 64": 4, "PlayStation": 2, "Game Boy": 1, "Game Boy Advance": 1}
+SALAS = {}   # código -> {"host": ws, "usuario", "pasta", "arquivo", "nome", "max", "guests": {id: {"ws","nome","slot"}}}
+_LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+
+def _corrige_candidatos(obj, ip: str):
+    """O navegador esconde o IP local atrás de um nome .local; troca pelo IP real que o servidor enxerga (funciona em casa e via Tailscale)."""
+    def troca(t):
+        return re.sub(r"[0-9a-fA-F-]{8,}\.local", ip, t) if isinstance(t, str) else t
+    if isinstance(obj, dict):
+        for k in ("candidate", "sdp"):
+            if k in obj:
+                obj[k] = troca(obj[k])
+        if isinstance(obj.get("cand"), dict):
+            obj["cand"]["candidate"] = troca(obj["cand"].get("candidate"))
+        if isinstance(obj.get("sdp"), dict):
+            obj["sdp"]["sdp"] = troca(obj["sdp"].get("sdp"))
+    return obj
+
+
+async def _envia(ws, dado):
+    try:
+        await ws.send_json(dado)
+    except Exception:
+        pass
+
+
+@app.get("/api/multi/salas")
+async def multi_salas(request: Request):
+    exigir_login(request)
+    return [{"codigo": c, "nome": s["nome"], "pasta": s["pasta"], "arquivo": s["arquivo"], "host": s["usuario"],
+             "jogadores": 1 + len(s["guests"]), "max": s["max"]} for c, s in SALAS.items()]
+
+
+@app.get("/multi")
+async def multi_pagina(request: Request):
+    if not usuario_da_sessao(request):
+        return FileResponse(WEB / "index.html")
+    return FileResponse(WEB / "multi.html")
+
+
+from starlette.websockets import WebSocket, WebSocketDisconnect
+
+
+@app.websocket("/ws/multi")
+async def ws_multi(ws: WebSocket):
+    user = usuario_da_sessao(ws)
+    if not user:
+        await ws.close(code=4401)
+        return
+    await ws.accept()
+    ip = ws.client.host if ws.client else "?"
+    codigo = meu_id = None
+    try:
+        ini = await asyncio.wait_for(ws.receive_json(), timeout=20)
+        if ini.get("t") == "host":
+            pasta, arq = str(ini.get("pasta", "")), str(ini.get("arquivo", ""))
+            if pasta not in CONSOLES or JOGADORES.get(pasta, 1) < 2:
+                await _envia(ws, {"t": "erro", "msg": "Esse console não tem multiplayer."}); return
+            _arquivo_jogo(pasta, arq)
+            if len(SALAS) >= 8:
+                await _envia(ws, {"t": "erro", "msg": "Já há salas demais abertas."}); return
+            codigo = "".join(random.choice(_LETRAS) for _ in range(4))
+            while codigo in SALAS:
+                codigo = "".join(random.choice(_LETRAS) for _ in range(4))
+            nome = _nome_bonito(Path(arq))
+            SALAS[codigo] = {"host": ws, "usuario": user, "pasta": pasta, "arquivo": arq, "nome": nome, "max": JOGADORES[pasta], "guests": {}}
+            registrar("JOGOS", user, ip, f"ABRIU a sala multiplayer {codigo} do jogo '{nome}' ({pasta}, até {JOGADORES[pasta]} jogadores)", "ok", "ok")
+            await _envia(ws, {"t": "sala", "codigo": codigo, "max": JOGADORES[pasta]})
+            while True:
+                m = await ws.receive_json()
+                if m.get("t") == "sinal" and m.get("para") in SALAS[codigo]["guests"]:
+                    await _envia(SALAS[codigo]["guests"][m["para"]]["ws"], {"t": "sinal", "d": _corrige_candidatos(m.get("d") or {}, ip)})
+        elif ini.get("t") == "guest":
+            codigo = str(ini.get("sala", "")).upper().strip()
+            sala = SALAS.get(codigo)
+            if not sala:
+                await _envia(ws, {"t": "erro", "msg": "Sala não encontrada. Ela pode ter sido fechada."}); return
+            livres = [n for n in range(1, sala["max"]) if n not in {g["slot"] for g in sala["guests"].values()}]
+            if not livres:
+                await _envia(ws, {"t": "erro", "msg": "A sala está cheia."}); return
+            meu_id = "g" + "".join(random.choice(_LETRAS) for _ in range(5))
+            slot = livres[0]
+            sala["guests"][meu_id] = {"ws": ws, "nome": user, "slot": slot}
+            registrar("JOGOS", user, ip, f"ENTROU como jogador {slot + 1} na sala {codigo} de {sala['usuario']} ('{sala['nome']}')", "ok", "ok")
+            await _envia(ws, {"t": "ok", "slot": slot, "nome": sala["nome"], "pasta": sala["pasta"], "host": sala["usuario"]})
+            await _envia(sala["host"], {"t": "entrou", "id": meu_id, "slot": slot, "nome": user})
+            while True:
+                m = await ws.receive_json()
+                if m.get("t") == "sinal" and codigo in SALAS:
+                    await _envia(SALAS[codigo]["host"], {"t": "sinal", "de": meu_id, "d": _corrige_candidatos(m.get("d") or {}, ip)})
+    except (WebSocketDisconnect, asyncio.TimeoutError, RuntimeError, ValueError):
+        pass
+    finally:
+        sala = SALAS.get(codigo or "")
+        if sala and sala["host"] is ws:
+            SALAS.pop(codigo, None)
+            for g in list(sala["guests"].values()):
+                await _envia(g["ws"], {"t": "fim", "msg": "O anfitrião fechou o jogo."})
+                try:
+                    await g["ws"].close()
+                except Exception:
+                    pass
+            registrar("JOGOS", user, ip, f"FECHOU a sala multiplayer {codigo}", "ok", "info")
+        elif sala and meu_id in sala["guests"]:
+            sala["guests"].pop(meu_id, None)
+            await _envia(sala["host"], {"t": "saiu", "id": meu_id})
+            registrar("JOGOS", user, ip, f"SAIU da sala multiplayer {codigo}", "ok", "info")
 
 @app.get("/jogar")
 async def jogar_pagina(request: Request):

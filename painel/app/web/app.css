@@ -278,4 +278,8 @@ meta{color:inherit}
 .tema .prev{border-radius:0.625rem;padding:0.5rem;display:flex;flex-direction:column;gap:0.3rem;height:4.5rem;border:1px solid rgba(128,128,128,.25)}
 .tema .prev i{flex:1;border-radius:0.3rem;display:flex;flex-direction:column;justify-content:center;gap:0.2rem;padding:0 0.4rem}
 .tema .prev i b{display:block;height:0.3rem;width:40%;border-radius:0.2rem}
-.tema .prev i s{display:block;height:0.2rem;width:80%;border-radius:0.2rem;opacity:.7}
+.tema .prev i s{display:block;height:0.2rem;width:80%;border-radius:0.2rem;opacity:.7}
+.jogo .multi{position:absolute;bottom:0.375rem;right:0.375rem;width:2.125rem;height:2.125rem;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;backdrop-filter:blur(4px);z-index:3}
+.jogo .multi:hover{transform:scale(1.15);background:var(--acc2)}
+.salas{display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem}
+.sala{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;background:var(--card2);border-radius:0.75rem;padding:0.5rem 0.75rem}

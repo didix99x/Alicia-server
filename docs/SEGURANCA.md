@@ -24,6 +24,7 @@ O Alicia Server guarda arquivos pessoais e fala com uma API externa. Estas são 
 | Apagar sem querer | "Apagar" move para a **lixeira**; pastas principais são protegidas; confirmação antes |
 | Chave da NVIDIA vazar | Fica só no `.env` (ACL do Windows); mascarada no painel; nunca em código, log, README ou mensagem de erro; `.gitignore` bloqueia `.env` |
 | API local do Hermes | Escuta só em `127.0.0.1` e exige chave interna |
+| Multiplayer | A sala só é acessível logado (inclusive visitante); o servidor só repassa mensagens de conexão e a lista de salas, a tela vai direto entre os aparelhos; máximo de 8 salas |
 | Upload indevido | O envio de filmes e séries só aceita extensões de vídeo e legenda; o envio de arquivos é exclusivo dos moradores (o visitante é bloqueado); caminhos são validados |
 | Disco falhando | O monitor confere a saúde do HD a cada hora e alerta no painel (o backup depende dele) |
 

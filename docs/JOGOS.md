@@ -42,3 +42,19 @@ Jogos de PlayStation costumam vir em `.rar`, ou numa pasta com `.bin` + `.cue`, 
 - **Capa:** uma imagem com "capa" no nome dentro da pasta vira a capa do jogo.
 - Os originais vão para `Jogos/Originais_rar` (pode apagar depois para liberar espaço). Um aviso aparece na aba enquanto o servidor trabalha (alguns minutos).
 - **Arquivo com senha:** a aba mostra um campo para digitar a senha (geralmente está no site de onde você baixou). A senha só é usada para descompactar e **não fica guardada**.
+## Multiplayer (jogar junto com amigos)
+
+Os jogos de **Nintendo, Super Nintendo, Nintendo 64 e PlayStation** podem ser jogados por mais de uma pessoa, cada uma no seu aparelho (Game Boy e Game Boy Advance não têm multiplayer aqui).
+
+1. **Anfitrião:** na aba Jogos, toque no botão **👥** de um jogo. O jogo abre e aparece uma etiqueta "👥 Sala ABCD". Tocar nela copia o link da sala.
+2. **Amigos:** na aba Jogos, o painel **👥 Jogar junto** lista as salas abertas, com o botão **Entrar**. Também dá para digitar o **código de 4 letras**, ou abrir o link.
+3. Quem entra recebe a **imagem e o som** do jogo e usa os **controles** do próprio aparelho: teclado, controle físico ou **botões na tela** (celular e tablet). Cada um vira o jogador 2, 3 ou 4.
+
+Quantos jogadores: Nintendo 2, Super Nintendo 2, Nintendo 64 até 4, PlayStation 2.
+
+**Como funciona:** o jogo roda **só no aparelho do anfitrião**, que transmite a tela por WebRTC; o servidor apenas apresenta os aparelhos uns aos outros e lista as salas. Por isso:
+
+- o anfitrião precisa **manter o jogo aberto e a tela ligada** (se fechar, a sala acaba e os convidados são avisados);
+- o desempenho depende do aparelho do anfitrião: prefira notebook, PC ou um celular forte;
+- o painel **não sabe quais jogos têm modo para dois jogadores**. O botão 👥 aparece em todos os jogos desses consoles. Se o jogo for só de um jogador, o segundo controle simplesmente não faz nada;
+- o progresso salvo é o do anfitrião.

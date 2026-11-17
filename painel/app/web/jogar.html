@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Alicia Server — Jogar</title>
@@ -8,15 +8,17 @@ html,body{margin:0;height:100%;background:#000;color:#e9ecf5;font-family:system-
 #topo{position:fixed;top:8px;left:8px;z-index:50;display:flex;gap:8px;align-items:center}
 #topo a,#topo span{background:#1a1d27cc;color:#e9ecf5;padding:10px 16px;border-radius:12px;text-decoration:none;font-size:16px}
 #topo a:focus,#topo a:hover{outline:3px solid #a78bfa}
+#sala{background:#7c5cf0;color:#fff;padding:10px 16px;border-radius:12px;font-size:16px;cursor:pointer;display:none}
+#sala small{opacity:.85;margin-left:8px}
 #aviso{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:20px;background:#0f1117;z-index:60}
 </style></head>
 <body>
-<div id="topo"><a href="/" id="voltar" tabindex="0">⬅ Voltar aos jogos</a><span id="msg"></span></div>
+<div id="topo"><a href="/" id="voltar" tabindex="0">⬅ Voltar aos jogos</a><span id="msg"></span><span id="sala" title="Toque para copiar o link da sala"></span></div>
 <div id="aviso"><div id="avisoTxt"></div></div>
 <div id="game"></div>
 <script>
 // Emulador rodando NO NAVEGADOR deste aparelho (EmulatorJS). O servidor só entrega o jogo e guarda o save.
-const q = new URLSearchParams(location.search), pasta = q.get('c'), arquivo = q.get('a');
+const q = new URLSearchParams(location.search), pasta = q.get('c'), arquivo = q.get('a'), MULTI = q.get('m') === '1';
 const $ = s => document.querySelector(s);
 const qs = 'pasta=' + encodeURIComponent(pasta) + '&arquivo=' + encodeURIComponent(arquivo);
 function erro(t){ $('#aviso').style.display='grid'; $('#avisoTxt').innerHTML = t + '<br><br><a href="/" style="color:#a78bfa">Voltar</a>'; }
@@ -57,7 +59,15 @@ function erro(t){ $('#aviso').style.display='grid'; $('#avisoTxt').innerHTML = t
         ultimo = Date.now(); $('#msg').textContent = 'Progresso salvo ✓'; setTimeout(() => $('#msg').textContent = '', 2500);
       } catch (e) {}
     }
-    window.EJS_onGameStart = () => { setInterval(salvar, 120000); };
+    if (MULTI) {                                       // multiplayer: guarda o áudio do jogo para transmitir aos amigos
+      const orig = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function (t, ...a) {
+        const r = orig.call(this, t, ...a);
+        try { if (t instanceof AudioDestinationNode) { if (!window.__dest || window.__dest.context !== t.context) window.__dest = t.context.createMediaStreamDestination(); orig.call(this, window.__dest); } } catch (e) {}
+        return r;
+      };
+    }
+    window.EJS_onGameStart = () => { setInterval(salvar, 120000); if (MULTI) setTimeout(iniciarSala, 1500); };
     window.EJS_onSaveState = () => salvar();
     document.addEventListener('visibilitychange', () => { if (document.hidden) salvar(); });
     // Dentro do painel (camada sobre a página), "Voltar" só fecha o jogo e a música continua; fora dele, volta para o início.
@@ -70,6 +80,39 @@ function erro(t){ $('#aviso').style.display='grid'; $('#avisoTxt').innerHTML = t
     sc.onerror = () => erro('Não consegui carregar o emulador.'); document.body.appendChild(sc);
   } catch (e) { erro('Não consegui abrir o jogo. Confira se você está logado e se o servidor está ligado.'); }
 })();
-</script></body></html>
+
+// ---------- Multiplayer: este aparelho é o anfitrião; os amigos veem a tela e mandam os controles ----------
+function iniciarSala() {
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/multi');
+  const pares = {}, etiqueta = $('#sala'); let codigo = '', nomes = {};
+  const canvas = document.querySelector('#game canvas');
+  const fluxo = canvas && canvas.captureStream ? canvas.captureStream(60) : null;
+  const atualiza = () => { const n = Object.keys(nomes).length; etiqueta.style.display = 'inline-block'; etiqueta.innerHTML = '👥 Sala <b>' + codigo + '</b><small>' + (n ? (n + 1) + ' jogador(es): você' + Object.values(nomes).map(x => ', ' + x).join('') : 'esperando amigos…') + '</small>'; };
+  etiqueta.onclick = () => { const l = location.origin + '/multi?sala=' + codigo; (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => $('#msg').textContent = 'Link da sala copiado ✓', () => $('#msg').textContent = 'Código da sala: ' + codigo); setTimeout(() => $('#msg').textContent = '', 3000); };
+  ws.onopen = () => ws.send(JSON.stringify({ t: 'host', pasta, arquivo }));
+  ws.onmessage = async ev => {
+    const m = JSON.parse(ev.data);
+    if (m.t === 'sala') { codigo = m.codigo; atualiza(); }
+    else if (m.t === 'erro') { $('#msg').textContent = m.msg; }
+    else if (m.t === 'entrou') {
+      const pc = new RTCPeerConnection({ iceServers: [] }); pares[m.id] = { pc, slot: m.slot }; nomes[m.id] = m.nome; atualiza();
+      if (fluxo) fluxo.getVideoTracks().forEach(t => pc.addTrack(t, fluxo));
+      if (window.__dest) window.__dest.stream.getAudioTracks().forEach(t => pc.addTrack(t, window.__dest.stream));
+      const dc = pc.createDataChannel('controle', { ordered: true });
+      dc.onmessage = e => { try { const c = JSON.parse(e.data); const gm = window.EJS_emulator && window.EJS_emulator.gameManager; if (gm) gm.simulateInput(m.slot, c.i, c.v); } catch (x) {} };
+      pc.onicecandidate = e => { if (e.candidate) ws.send(JSON.stringify({ t: 'sinal', para: m.id, d: { cand: e.candidate } })); };
+      await pc.setLocalDescription(await pc.createOffer());
+      ws.send(JSON.stringify({ t: 'sinal', para: m.id, d: { sdp: pc.localDescription } }));
+      $('#msg').textContent = m.nome + ' entrou como jogador ' + (m.slot + 1); setTimeout(() => $('#msg').textContent = '', 4000);
+    } else if (m.t === 'saiu') {
+      if (pares[m.id]) { pares[m.id].pc.close(); delete pares[m.id]; } delete nomes[m.id]; atualiza();
+    } else if (m.t === 'sinal' && pares[m.de]) {
+      const pc = pares[m.de].pc;
+      if (m.d.sdp) await pc.setRemoteDescription(m.d.sdp); else if (m.d.cand) await pc.addIceCandidate(m.d.cand).catch(() => {});
+    }
+  };
+  ws.onclose = () => { etiqueta.style.display = 'none'; };
+  window.addEventListener('pagehide', () => ws.close());
+}</script></body></html>
 
 

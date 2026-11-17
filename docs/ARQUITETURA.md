@@ -127,7 +127,7 @@ sequenceDiagram
 | Arquivos | `GET /api/arquivos` · `POST /api/arquivos/enviar` · `GET /api/arquivos/baixar` · `DELETE /api/arquivos` · `POST /api/arquivos/pasta` |
 | Alicia | `GET /api/alicia/opcoes` · `POST /api/alicia/conversar` · `POST /api/alicia/voz` · `POST /api/alicia/musica` · `GET /api/alicia/imagem/{nome}` |
 | Música | `GET /api/musica/buscar` · `GET/POST /api/musica/biblioteca` · `GET /api/musica/servidor` · `GET /api/musica/audio/{id}` · `GET /api/musica/proxima` · `POST /api/musica/tocando` · `GET /api/musica/descobrir` · `GET /api/musica/mix` · `GET /api/musica/playlist` · `POST /api/musica/recomendar` · `POST /api/musica/guardar` · `GET /api/musica/guardando` |
-| Jogos | `GET /api/jogos` · `GET /api/jogos/arquivo` · `GET /api/jogos/bios` · `GET/POST /api/jogos/save` · `GET /api/jogos/capa` · `GET /api/jogos/imagem` (capa automática) · `POST /api/jogos/favorito` · `GET /api/jogos/info` · `POST /api/jogos/inicio` · `POST /api/jogos/fim` · `POST /api/jogos/senha` · `POST /api/atividade` · `GET /jogar` |
+| Jogos | `GET /api/jogos` · `GET /api/jogos/arquivo` · `GET /api/jogos/bios` · `GET/POST /api/jogos/save` · `GET /api/jogos/capa` · `GET /api/jogos/imagem` (capa automática) · `POST /api/jogos/favorito` · `GET /api/jogos/info` · `POST /api/jogos/inicio` · `POST /api/jogos/fim` · `POST /api/jogos/senha` · `GET /api/multi/salas` · `WS /ws/multi` (sinalização do multiplayer) · `GET /multi` · `POST /api/atividade` · `GET /jogar` |
 | Filmes | `POST /api/filmes/enviar` |
 | RPG | `GET /api/rpg/info` · `POST /api/rpg/sala` · `POST /api/rpg/entrar` · `GET /api/rpg/sala/{codigo}` · `POST …/falar` · `POST …/dado` · `POST …/combate` |
 | Registros | `GET /api/logs` · `GET /api/logs/ao-vivo` (SSE) |
