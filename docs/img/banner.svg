@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-label="Alicia Server">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d0f15"/><stop offset="1" stop-color="#1b1640"/></linearGradient>
+    <linearGradient id="logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c5cf0"/></linearGradient>
+    <radialGradient id="brilho" cx="85%" cy="20%" r="60%"><stop offset="0" stop-color="#7c5cf0" stop-opacity=".45"/><stop offset="1" stop-color="#7c5cf0" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="300" rx="24" fill="url(#fundo)"/><rect width="1200" height="300" rx="24" fill="url(#brilho)"/>
+  <rect x="70" y="82" width="136" height="136" rx="40" fill="url(#logo)"/>
+  <path d="M138 112 l22 76 h-14 l-5 -17 h-26 l-5 17 h-14 z M133 156 h10 l-5 -20 z" fill="#0d0f15"/>
+  <text x="240" y="150" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="78" font-weight="800" fill="#eceff8">Alicia Server</text>
+  <text x="244" y="200" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" fill="#a9b0c8">Seu servidor doméstico: IA, arquivos, filmes, jogos, música e RPG.</text>
+  <text x="244" y="244" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" fill="#7c5cf0">notebook modesto · 24 horas · um painel só · de qualquer lugar</text>
+</svg>
