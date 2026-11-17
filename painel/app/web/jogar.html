@@ -17,6 +17,7 @@ html,body{margin:0;height:100%;background:#000;color:#e9ecf5;font-family:system-
 <div id="aviso"><div id="avisoTxt"></div></div>
 <div id="game"></div>
 <script src="/static/controle.js"></script>
+<script src="/static/toque.js"></script>
 <script>
 // Emulador rodando NO NAVEGADOR deste aparelho (EmulatorJS). O servidor só entrega o jogo e guarda o save.
 const q = new URLSearchParams(location.search), pasta = q.get('c'), arquivo = q.get('a'), MULTI = q.get('m') === '1';
@@ -71,6 +72,8 @@ function erro(t){ $('#aviso').style.display='grid'; $('#avisoTxt').innerHTML = t
     window.EJS_onGameStart = () => {
       setInterval(salvar, 120000); if (MULTI) setTimeout(iniciarSala, 1500);
       try { window.EJS_emulator.gamepad.listeners = {}; } catch (e) {}          // a leitura de controle do emulador erra em vários modelos: usamos a nossa (controle.js)
+      AliciaToque.iniciar({ console: pasta, forcar: q.get('toque') === '1', menu: () => { try { window.EJS_emulator.menu.toggle(); } catch (e) {} },
+        enviar: (i, v) => { const gm = window.EJS_emulator && window.EJS_emulator.gameManager; if (gm) gm.simulateInput(0, i, v); } });
       AliciaPad.iniciar({ console: pasta, maxJogadores: MULTI ? 1 : 4, botao: $('#ctl'),
         enviar: (j, i, v) => { const gm = window.EJS_emulator && window.EJS_emulator.gameManager; if (gm) gm.simulateInput(j, i, v); } });
     };

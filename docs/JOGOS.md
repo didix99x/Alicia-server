@@ -70,3 +70,17 @@ O jogo usa uma leitura de controle própria (`painel/app/web/controle.js`), porq
 - No multiplayer, o convidado usa o mesmo sistema no aparelho dele.
 
 Se um botão específico não responde: abra "🎮 Controle", aperte o botão e veja se aparece (`B3`, `E9+`…). Se aparecer, refaça a configuração; se não aparecer, o navegador não está enxergando esse botão (tente conectar por cabo ou em outro modo do controle).
+## Controles na tela (celular e tablet)
+
+Em celular e tablet aparecem controles na tela feitos para **não errar** (`painel/app/web/toque.js`; o gamepad virtual do emulador fica desligado):
+
+- **Vários dedos ao mesmo tempo**: anda com o polegar esquerdo e aperta botões com o direito, sem limite artificial.
+- **Pode deslizar**: o dedo vai de um botão para outro **sem levantar** (por exemplo do B para o A), e o direcional segue o dedo mesmo que ele escorregue um pouco para fora.
+- **Direcional de 8 direções** numa área só (cima + direita = diagonal). No **Nintendo 64** ele vira um **analógico de verdade**, com a bolinha acompanhando o dedo, e os botões **C** ficam do lado direito.
+- **Dedo entre dois botões aperta os dois** (A+B).
+- **Um dedo que começou no direcional só mexe no direcional**, e o que começou nos botões só mexe nos botões; nada dispara por acidente ao arrastar.
+- Toque **fora dos controles** vai para o jogo/menu normalmente. Soltar o dedo, perder o toque, **girar a tela**, trocar de aba ou bloquear o celular **solta tudo** (nenhum botão fica preso).
+- Layout para o celular **na vertical e na horizontal**. Botões por console: NES e GBA (B, A), Super Nintendo (Y, X, B, A, L, R), PlayStation (□ △ ✕ ○, L1, R1, L2, R2), Nintendo 64 (A, B, C, Z, L, R); Start e Select em todos (N64 só Start).
+- **⚙ Ajustes** (barrinha no topo): **tamanho**, **transparência**, **vibração** ao tocar e **modo canhoto** (troca os lados). Fica salvo no aparelho. **👁 Ocultar controles** esconde tudo, **☰ Menu** abre o menu do emulador.
+- Quando um **controle físico** é usado, os botões da tela somem sozinhos e voltam se ele for desligado.
+- No **multiplayer**, o convidado usa exatamente os mesmos controles.

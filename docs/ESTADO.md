@@ -16,6 +16,7 @@ Este documento separa com honestidade **o que foi verificado**, **o que foi só 
 | Favoritos e capas | Favoritar/desfavoritar por usuário, faixa de favoritos, capas oficiais buscadas e guardadas (24 de 25 jogos testados acharam capa), painel de emuladores com estado dos 6 núcleos |
 | Multiplayer | Sala criada pelo anfitrião, convidado entrou pelo código, vídeo e áudio chegando (WebRTC) e comandos do convidado recebidos como jogador 2 no emulador; sala some quando todos saem. Testado com duas abas no mesmo notebook |
 | Modo servidor | `ligar` e `desligar` no notebook: plano de energia criado e restaurado, prioridades baixadas e devolvidas, painel e serviços seguiram no ar; recusa por SSH confirmada |
+| Controles na tela (toque) | Toques simulados no navegador em formato de celular (vertical e horizontal): botão, deslizar entre botões, dois dedos, direcional e diagonal, analógico do N64, toque fora dos controles, cancelamento, ocultar, sumir com controle físico, canhoto e tamanho |
 | Controles (gamepad) | Mapa por posição, direcional por eixo/hat e assistente de configuração conferidos com controles **simulados** no navegador; jogador atribuído e botões chegando ao emulador certos |
 | Jogos | Biblioteca em blocos, organização automática por conteúdo do arquivo, emulador abrindo um jogo de teste e um de Super Nintendo, salvar/ler progresso no servidor, camada sobre o painel com a música continuando |
 | Filmes | Jellyfin dentro do painel em tela cheia, login automático do usuário "casa", envio de filme e série com reconhecimento pelo Jellyfin |
@@ -34,6 +35,7 @@ Este documento separa com honestidade **o que foi verificado**, **o que foi só 
 - **App Android**: o projeto está completo, mas **nunca foi compilado nem instalado**.
 - **Multiplayer entre dois aparelhos de verdade** (rede de casa e Tailscale), botões na tela no celular, controle físico, latência real e Nintendo 64/PlayStation com 2 ou mais jogadores.
 - **Modo servidor com administrador** (pausar e religar os serviços do Windows) e com a tampa realmente fechada por horas.
+- **Controles na tela em celular de verdade** (multitoque no vidro, vibração, notch e barra do navegador): testado só com toques simulados.
 - **Controles físicos reais** (Xbox, PlayStation, Switch Pro, genéricos de USB e Bluetooth): a leitura foi testada só com controles simulados.
 - **Jogos pesados** (Nintendo 64 e PlayStation) em celular/TV box reais; **controle físico**.
 - **Pedir música pela voz** (microfone) e a Alicia falando por cima da música.

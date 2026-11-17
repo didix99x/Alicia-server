@@ -53,7 +53,7 @@
     if (jogadores.length >= cfg.maxJogadores) return -1;
     jogadores.push(chave(g));
     j = jogadores.length - 1;
-    aviso(`🎮 ${nomeBonito(g)}: jogador ${j + 1}`);
+    aviso(`🎮 ${nomeBonito(g)}: jogador ${j + 1}`); dispatchEvent(new CustomEvent('alicia-pad', { detail: { n: jogadores.length } }));
     if (perfilDe(g).precisaConfigurar && !avisou[g.id]) { avisou[g.id] = 1; setTimeout(() => abrirPainel(true), 600); }
     return j;
   }
@@ -82,7 +82,7 @@
     }
     // controle desligado: solta tudo daquele jogador
     for (let j = jogadores.length - 1; j >= 0; j--) {
-      if (!pads.some(g => chave(g) === jogadores[j])) { for (let i = 0; i < 24; i++) manda(j, i, 0); jogadores.splice(j, 1); aviso('🎮 Controle desconectado'); }
+      if (!pads.some(g => chave(g) === jogadores[j])) { for (let i = 0; i < 24; i++) manda(j, i, 0); jogadores.splice(j, 1); aviso('🎮 Controle desconectado'); dispatchEvent(new CustomEvent('alicia-pad', { detail: { n: jogadores.length } })); }
     }
     requestAnimationFrame(lerPads);
   }
